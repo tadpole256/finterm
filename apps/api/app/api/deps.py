@@ -4,6 +4,8 @@ from fastapi import Header
 
 from app.core.config import get_settings
 from app.services.cache import CacheService
+from app.services.filings_provider import FilingsProvider, filings_provider_from_name
+from app.services.macro_provider import MacroProvider, macro_provider_from_name
 from app.services.market_provider import MarketDataProvider, provider_from_name
 
 
@@ -16,6 +18,18 @@ def get_provider() -> MarketDataProvider:
 @lru_cache(maxsize=1)
 def get_cache() -> CacheService:
     return CacheService()
+
+
+@lru_cache(maxsize=1)
+def get_filings_provider() -> FilingsProvider:
+    settings = get_settings()
+    return filings_provider_from_name(settings.filings_provider)
+
+
+@lru_cache(maxsize=1)
+def get_macro_provider() -> MacroProvider:
+    settings = get_settings()
+    return macro_provider_from_name(settings.macro_provider)
 
 
 def get_user_id(x_user_id: str | None = Header(default=None)) -> str:

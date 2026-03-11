@@ -1,0 +1,23 @@
+[
+  {
+    "code": "US_CPI_YOY",
+    "name": "US CPI YoY",
+    "description": "Consumer Price Index year-over-year change.",
+    "frequency": "monthly",
+    "country": "US"
+  },
+  {
+    "code": "US_JOBLESS_CLAIMS",
+    "name": "Initial Jobless Claims",
+    "description": "Weekly number of new unemployment insurance claims.",
+    "frequency": "weekly",
+    "country": "US"
+  },
+  {
+    "code": "US_UMICH_SENTIMENT",
+    "name": "University of Michigan Sentiment",
+    "description": "Monthly consumer sentiment survey for US households.",
+    "frequency": "monthly",
+    "country": "US"
+  }
+]

@@ -9,7 +9,7 @@ Finterm is a personal market intelligence terminal for one advanced user. It foc
 - AI used for summarization and triage, not deterministic prediction claims.
 - Honest UI signals for stale/delayed/degraded data.
 
-## Current Scope (Implemented: Phase 1 + Phase 2 + Phase 3 + Phase 4 + Phase 5 MVP)
+## Current Scope (Implemented: Phase 1 + Phase 2 + Phase 3 + Phase 4 + Phase 5 + Phase 6 MVP)
 
 - Foundation monorepo (`Next.js` frontend, `FastAPI` backend, worker scaffold).
 - Full baseline schema + Alembic migration for required core entities.
@@ -20,9 +20,11 @@ Finterm is a personal market intelligence terminal for one advanced user. It foc
 - Research notebook (`/research`) with note create/edit/delete/search, thesis tracking, and note synthesis.
 - Portfolio workspace (`/portfolio`) with holdings, transactions, P&L summary, sector exposure, and links to research/watchlists.
 - Alerts workspace (`/alerts`) with alert CRUD, manual evaluation, event history, notification read-state, and daily brief controls.
+- Intel workspace (`/intel`) with filings/macro sync controls and visibility into ingested outputs.
 - API routes for market, watchlists, bars, instrument search/detail, workspace security payload, layout persistence, basic screening, and research.
 - Portfolio APIs for overview, positions, transaction history, create transaction, and delete transaction.
 - Alerts + notifications + brief APIs with worker execution loop for scheduled evaluations/generation.
+- Filings and macro ingestion adapters with sync/list/detail APIs and worker hooks.
 - Redis cache service with in-memory fallback and degraded freshness signaling.
 
 ## Architecture Overview
@@ -92,6 +94,11 @@ Optional worker loop:
 npm run dev:worker
 ```
 
+Optional worker env knobs:
+- `WORKER_POLL_SECONDS` (default `60`)
+- `WORKER_FILINGS_SYNC_MINUTES` (default `360`)
+- `WORKER_MACRO_SYNC_MINUTES` (default `60`)
+
 - Web: `http://localhost:3000`
 - API docs: `http://localhost:8000/docs`
 
@@ -131,6 +138,12 @@ npm run dev:worker
 - `PATCH /api/v1/notifications/{notification_id}/read`
 - `GET /api/v1/briefs/latest`
 - `POST /api/v1/briefs/generate`
+- `POST /api/v1/filings/sync`
+- `GET /api/v1/filings`
+- `GET /api/v1/filings/{filing_id}`
+- `POST /api/v1/macro/sync`
+- `GET /api/v1/macro/series`
+- `GET /api/v1/macro/events`
 
 ## Roadmap
 

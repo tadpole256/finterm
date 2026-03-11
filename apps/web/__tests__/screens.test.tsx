@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { AlertsWorkspaceScreen } from "@/components/AlertsWorkspaceScreen";
 import { DashboardScreen } from "@/components/DashboardScreen";
+import { IntelSyncScreen } from "@/components/IntelSyncScreen";
 import { PortfolioScreen } from "@/components/PortfolioScreen";
 import { ResearchNotebookScreen } from "@/components/ResearchNotebookScreen";
 import { SecurityWorkspaceScreen } from "@/components/SecurityWorkspaceScreen";
@@ -12,7 +13,12 @@ import {
   mockAlertEvaluationSummary,
   mockAlertEvents,
   mockDailyBriefDetail,
+  mockFilings,
+  mockFilingSyncSummary,
   mockManagedAlerts,
+  mockMacroEvents,
+  mockMacroSeries,
+  mockMacroSyncSummary,
   mockNotifications,
   defaultLayoutState,
   mockDashboard,
@@ -45,7 +51,10 @@ vi.mock("@/lib/api", () => ({
   evaluateAlerts: vi.fn(async () => mockAlertEvaluationSummary),
   generateBrief: vi.fn(async () => mockDailyBriefDetail),
   getAlertEvents: vi.fn(async () => mockAlertEvents),
+  getFilings: vi.fn(async () => mockFilings),
   getManagedAlerts: vi.fn(async () => mockManagedAlerts),
+  getMacroEvents: vi.fn(async () => mockMacroEvents),
+  getMacroSeries: vi.fn(async () => mockMacroSeries),
   getNoteSynthesis: vi.fn(async () => mockNoteSynthesis),
   getNotifications: vi.fn(async () => mockNotifications),
   getPortfolioOverview: vi.fn(async () => mockPortfolioOverview),
@@ -54,6 +63,8 @@ vi.mock("@/lib/api", () => ({
   markNotificationRead: vi.fn(async () => undefined),
   removeWatchlistItem: vi.fn(async () => undefined),
   reorderWatchlistItems: vi.fn(async () => ({ id: "watchlist-1", name: "Core", description: null, items: [] })),
+  syncFilings: vi.fn(async () => mockFilingSyncSummary),
+  syncMacro: vi.fn(async () => mockMacroSyncSummary),
   updateResearchNote: vi.fn(async () => mockResearchNotes[0]),
   updateThesis: vi.fn(async () => mockTheses[0]),
   updateWatchlistLayout: vi.fn(async (_, layout) => layout)
@@ -114,5 +125,18 @@ describe("screen smoke coverage", () => {
 
     expect(screen.getByText("Alerts & Briefs")).toBeInTheDocument();
     expect(screen.getByText("Active Alerts")).toBeInTheDocument();
+  });
+
+  it("renders filings and macro sync shell", () => {
+    render(
+      <IntelSyncScreen
+        initialFilings={mockFilings}
+        initialSeries={mockMacroSeries}
+        initialEvents={mockMacroEvents}
+      />
+    );
+
+    expect(screen.getByText("Filings & Macro Sync")).toBeInTheDocument();
+    expect(screen.getByText("Recent Filings")).toBeInTheDocument();
   });
 });

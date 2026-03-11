@@ -3,6 +3,11 @@ import type {
   AlertEvent,
   DailyBriefDetail,
   DashboardPayload,
+  FilingRecord,
+  FilingSyncSummary,
+  MacroEventRecord,
+  MacroSeriesRecord,
+  MacroSyncSummary,
   ManagedAlert,
   NoteSynthesis,
   NotificationItem,
@@ -252,4 +257,64 @@ export const mockDailyBriefDetail: DailyBriefDetail = {
   body: "Fallback daily brief body.",
   generated_at: new Date().toISOString(),
   source_model: "fallback"
+};
+
+export const mockFilings: FilingRecord[] = [
+  {
+    id: "filing-fallback-1",
+    symbol: "AAPL",
+    accession_no: "0000320193-26-000011",
+    form_type: "10-Q",
+    filed_at: new Date().toISOString(),
+    period_end: null,
+    filing_url: "https://www.sec.gov/",
+    source_provider: "mock_sec",
+    summary: {
+      summary: "Fallback filing summary for local UI rendering.",
+      key_changes: ["Services commentary expanded versus prior filing."],
+      risks: ["FX sensitivity remains noted."],
+      forward_looking: ["Management expects stable margin progression."],
+      takeaway: "Treat this as a seeded placeholder.",
+      model_name: "fallback"
+    }
+  }
+];
+
+export const mockMacroSeries: MacroSeriesRecord[] = [
+  {
+    id: "macro-series-fallback-1",
+    code: "US_CPI_YOY",
+    name: "US CPI YoY",
+    description: "Fallback macro series payload.",
+    frequency: "monthly",
+    source_provider: "mock_macro",
+    upcoming_event_count: 1,
+    next_event_at: new Date().toISOString()
+  }
+];
+
+export const mockMacroEvents: MacroEventRecord[] = [
+  {
+    id: "macro-event-fallback-1",
+    series_code: "US_CPI_YOY",
+    title: "CPI (YoY)",
+    scheduled_at: new Date().toISOString(),
+    impact: "high",
+    actual: null,
+    forecast: "3.0%",
+    country: "US"
+  }
+];
+
+export const mockFilingSyncSummary: FilingSyncSummary = {
+  fetched_count: 1,
+  inserted_count: 1,
+  updated_summary_count: 1,
+  as_of: new Date().toISOString()
+};
+
+export const mockMacroSyncSummary: MacroSyncSummary = {
+  series_upserted: 1,
+  events_inserted: 1,
+  as_of: new Date().toISOString()
 };

@@ -1,5 +1,29 @@
 [
-  {"title": "CPI (YoY)", "scheduled_at": "2026-03-12T12:30:00Z", "impact": "high", "actual": null, "forecast": "3.0%"},
-  {"title": "Initial Jobless Claims", "scheduled_at": "2026-03-12T12:30:00Z", "impact": "medium", "actual": null, "forecast": "218K"},
-  {"title": "University of Michigan Sentiment", "scheduled_at": "2026-03-13T14:00:00Z", "impact": "medium", "actual": null, "forecast": "78.4"}
+  {
+    "series_code": "US_CPI_YOY",
+    "title": "CPI (YoY)",
+    "scheduled_at": "2026-03-12T12:30:00Z",
+    "impact": "high",
+    "actual": null,
+    "forecast": "3.0%",
+    "country": "US"
+  },
+  {
+    "series_code": "US_JOBLESS_CLAIMS",
+    "title": "Initial Jobless Claims",
+    "scheduled_at": "2026-03-12T12:30:00Z",
+    "impact": "medium",
+    "actual": null,
+    "forecast": "218K",
+    "country": "US"
+  },
+  {
+    "series_code": "US_UMICH_SENTIMENT",
+    "title": "University of Michigan Sentiment",
+    "scheduled_at": "2026-03-13T14:00:00Z",
+    "impact": "medium",
+    "actual": null,
+    "forecast": "78.4",
+    "country": "US"
+  }
 ]

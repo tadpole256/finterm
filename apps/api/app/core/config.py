@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     )
     redis_url: str = Field(default="redis://localhost:6379/0", alias="REDIS_URL")
     market_data_provider: str = Field(default="mock", alias="MARKET_DATA_PROVIDER")
+    filings_provider: str = Field(default="mock_sec", alias="FILINGS_PROVIDER")
+    macro_provider: str = Field(default="mock_macro", alias="MACRO_PROVIDER")
     user_seed_id: str = Field(default="00000000-0000-0000-0000-000000000001", alias="USER_SEED_ID")
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", case_sensitive=False)

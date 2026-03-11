@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from fastapi.encoders import jsonable_encoder
@@ -15,6 +15,7 @@ from app.db.models import (
     Filing,
     FilingSummary,
     Instrument,
+    MacroEvent,
     ResearchNote,
     Watchlist,
     WatchlistItem,
@@ -43,18 +44,40 @@ class MarketWorkspaceService:
         market_snapshot = [self._quote_dict(item) for item in self.provider.list_market_snapshot()]
         gainers, losers = self.provider.get_movers()
 
-        macro_events = []
-        for event in self.provider.get_macro_events():
-            macro_events.append(
-                {
-                    "id": event.id,
-                    "title": event.title,
-                    "scheduled_at": event.scheduled_at.isoformat(),
-                    "impact": event.impact,
-                    "actual": event.actual,
-                    "forecast": event.forecast,
-                }
+        now = datetime.now(UTC)
+        macro_rows = (
+            self.db.execute(
+                select(MacroEvent)
+                .where(MacroEvent.scheduled_at >= now - timedelta(days=1))
+                .order_by(MacroEvent.scheduled_at.asc())
+                .limit(12)
             )
+            .scalars()
+            .all()
+        )
+        macro_events = [
+            {
+                "id": row.id,
+                "title": row.title,
+                "scheduled_at": row.scheduled_at.isoformat(),
+                "impact": row.impact,
+                "actual": row.actual,
+                "forecast": row.forecast,
+            }
+            for row in macro_rows
+        ]
+        if not macro_events:
+            for event in self.provider.get_macro_events():
+                macro_events.append(
+                    {
+                        "id": event.id,
+                        "title": event.title,
+                        "scheduled_at": event.scheduled_at.isoformat(),
+                        "impact": event.impact,
+                        "actual": event.actual,
+                        "forecast": event.forecast,
+                    }
+                )
 
         alerts = self.db.execute(
             select(Alert).where(Alert.user_id == user_id, Alert.status == "active").limit(8)

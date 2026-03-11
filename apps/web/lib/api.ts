@@ -3,8 +3,13 @@ import {
   mockAlertEvents,
   mockDailyBriefDetail,
   defaultLayoutState,
+  mockFilings,
+  mockFilingSyncSummary,
   mockDashboard,
   mockManagedAlerts,
+  mockMacroEvents,
+  mockMacroSeries,
+  mockMacroSyncSummary,
   mockNoteSynthesis,
   mockNotifications,
   mockPortfolioOverview,
@@ -18,7 +23,12 @@ import type {
   AlertEvent,
   DashboardPayload,
   DailyBriefDetail,
+  FilingRecord,
+  FilingSyncSummary,
   ManagedAlert,
+  MacroEventRecord,
+  MacroSeriesRecord,
+  MacroSyncSummary,
   NoteSynthesis,
   NotificationItem,
   PortfolioOverviewPayload,
@@ -404,5 +414,50 @@ export async function generateBrief(): Promise<DailyBriefDetail> {
     });
   } catch {
     return mockDailyBriefDetail;
+  }
+}
+
+export async function syncFilings(): Promise<FilingSyncSummary> {
+  try {
+    return await request<FilingSyncSummary>("/api/v1/filings/sync", {
+      method: "POST"
+    });
+  } catch {
+    return mockFilingSyncSummary;
+  }
+}
+
+export async function getFilings(symbol?: string): Promise<FilingRecord[]> {
+  try {
+    const suffix = symbol ? `?symbol=${encodeURIComponent(symbol)}` : "";
+    return await request<FilingRecord[]>(`/api/v1/filings${suffix}`);
+  } catch {
+    return mockFilings;
+  }
+}
+
+export async function syncMacro(): Promise<MacroSyncSummary> {
+  try {
+    return await request<MacroSyncSummary>("/api/v1/macro/sync", {
+      method: "POST"
+    });
+  } catch {
+    return mockMacroSyncSummary;
+  }
+}
+
+export async function getMacroSeries(): Promise<MacroSeriesRecord[]> {
+  try {
+    return await request<MacroSeriesRecord[]>("/api/v1/macro/series");
+  } catch {
+    return mockMacroSeries;
+  }
+}
+
+export async function getMacroEvents(daysAhead = 14): Promise<MacroEventRecord[]> {
+  try {
+    return await request<MacroEventRecord[]>(`/api/v1/macro/events?days_ahead=${daysAhead}`);
+  } catch {
+    return mockMacroEvents;
   }
 }

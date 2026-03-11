@@ -299,3 +299,60 @@ export interface DailyBriefDetail {
   generated_at: string;
   source_model: string;
 }
+
+export interface FilingSummaryDetail {
+  summary: string;
+  key_changes: string[];
+  risks: string[];
+  forward_looking: string[];
+  takeaway: string;
+  model_name: string;
+}
+
+export interface FilingRecord {
+  id: string;
+  symbol: string;
+  accession_no: string;
+  form_type: string;
+  filed_at: string;
+  period_end: string | null;
+  filing_url: string | null;
+  source_provider: string;
+  summary: FilingSummaryDetail | null;
+  raw_text?: string | null;
+}
+
+export interface FilingSyncSummary {
+  fetched_count: number;
+  inserted_count: number;
+  updated_summary_count: number;
+  as_of: string;
+}
+
+export interface MacroSeriesRecord {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  frequency: string;
+  source_provider: string;
+  upcoming_event_count: number;
+  next_event_at: string | null;
+}
+
+export interface MacroEventRecord {
+  id: string;
+  series_code: string | null;
+  title: string;
+  scheduled_at: string;
+  impact: string;
+  actual: string | null;
+  forecast: string | null;
+  country: string;
+}
+
+export interface MacroSyncSummary {
+  series_upserted: number;
+  events_inserted: number;
+  as_of: string;
+}

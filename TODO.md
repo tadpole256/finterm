@@ -57,8 +57,19 @@
 - [x] Alerts workspace UI (`/alerts`) for alert management, events, notifications, and brief controls
 - [x] Phase 5 backend and frontend test coverage
 
-## Next (Phase 6)
+## Phase 6 - Filings & Macro
 
-- [ ] SEC filing ingestion adapter and fetch/sync job
-- [ ] Filing summary/diff pipeline (current vs prior)
-- [ ] Macro series ingestion expansion and calendar enrichment
+- [x] SEC-style filings adapter abstraction and mock provider fixture feed
+- [x] Filing sync API + worker sync hook
+- [x] Filing summary and change-detection heuristics on ingest
+- [x] Macro series/event adapter abstraction and sync APIs
+- [x] Dashboard macro panel switched to DB-backed events with provider fallback
+- [x] Intel sync UI workspace (`/intel`) for filings/macro visibility + manual sync
+- [x] Phase 6 backend/frontend test coverage
+
+## Next (Phase 7)
+
+- [ ] Saved screens UI workflows for screener persistence
+- [ ] Richer screening filters and result table ergonomics
+- [ ] Keyboard shortcuts and interaction polish
+- [ ] Loading/empty/error state consistency pass across all major screens

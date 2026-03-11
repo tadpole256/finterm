@@ -7,7 +7,8 @@
 - Phase 3: **Completed (MVP)**
 - Phase 4: **Completed (MVP)**
 - Phase 5: **Completed (MVP)**
-- Phase 6+: **Not started**
+- Phase 6: **Completed (MVP)**
+- Phase 7+: **Not started**
 
 ## Phase Plan
 
@@ -73,11 +74,20 @@
 - Alerts workspace (`/alerts`) added to UI for alert management, event review, notification read-state, and brief generation.
 - Added backend and frontend tests for Phase 5 flows.
 
-### Phase 6: Filings & Macro (Pending)
+### Phase 6: Filings & Macro (Completed - MVP)
 
-- SEC adapter ingestion pipeline
-- Filing diff/change detection logic
-- Expanded macro time-series integration
+- Filings adapter + sync:
+  - `POST /api/v1/filings/sync`
+  - `GET /api/v1/filings`
+  - `GET /api/v1/filings/{filing_id}`
+- Macro adapter + sync:
+  - `POST /api/v1/macro/sync`
+  - `GET /api/v1/macro/series`
+  - `GET /api/v1/macro/events`
+- Filing summary generation with template heuristics and prior-filing change detection.
+- Worker extended with periodic filings and macro synchronization hooks.
+- Dashboard macro panel now reads DB-backed macro events (provider fallback retained).
+- Added Intel sync workspace (`/intel`) for manual filings/macro sync and visibility.
 
 ### Phase 7: Screener & Polish (Pending)
 

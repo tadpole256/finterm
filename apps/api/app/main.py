@@ -2,8 +2,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes.alerts import router as alerts_router
+from app.api.routes.filings import router as filings_router
 from app.api.routes.health import router as health_router
 from app.api.routes.layout import router as layout_router
+from app.api.routes.macro import router as macro_router
 from app.api.routes.market import router as market_router
 from app.api.routes.portfolio import router as portfolio_router
 from app.api.routes.research import ai_router as ai_router
@@ -33,3 +35,5 @@ app.include_router(research_router, prefix=settings.api_prefix)
 app.include_router(ai_router, prefix=settings.api_prefix)
 app.include_router(portfolio_router, prefix=settings.api_prefix)
 app.include_router(alerts_router, prefix=settings.api_prefix)
+app.include_router(filings_router, prefix=settings.api_prefix)
+app.include_router(macro_router, prefix=settings.api_prefix)

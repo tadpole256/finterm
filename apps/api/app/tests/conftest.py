@@ -10,7 +10,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.api.deps import get_cache, get_provider, get_user_id
+from app.api.deps import (
+    get_cache,
+    get_filings_provider,
+    get_macro_provider,
+    get_provider,
+    get_user_id,
+)
 from app.db.base import Base
 from app.db.models import (
     Alert,
@@ -31,6 +37,8 @@ from app.db.models import (
 from app.db.session import get_db
 from app.main import app
 from app.services.cache import CacheService
+from app.services.filings_provider import MockSecFilingsProvider
+from app.services.macro_provider import MockMacroProvider
 from app.services.market_provider import MockMarketDataProvider
 
 
@@ -59,6 +67,8 @@ def client(db_session: Session) -> Generator[TestClient, None, None]:
 
     app.dependency_overrides[get_db] = override_db
     app.dependency_overrides[get_provider] = lambda: MockMarketDataProvider()
+    app.dependency_overrides[get_filings_provider] = lambda: MockSecFilingsProvider()
+    app.dependency_overrides[get_macro_provider] = lambda: MockMacroProvider()
     app.dependency_overrides[get_cache] = lambda: CacheService()
     app.dependency_overrides[get_user_id] = lambda: "00000000-0000-0000-0000-000000000001"
 
