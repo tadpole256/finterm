@@ -1,0 +1,12 @@
+{
+  "gainers": [
+    {"symbol": "NVDA", "price": 874.8, "change": 16.72, "change_percent": 1.95, "volume": 52987000},
+    {"symbol": "TSLA", "price": 189.02, "change": 3.15, "change_percent": 1.7, "volume": 71211000},
+    {"symbol": "SMCI", "price": 928.14, "change": 12.76, "change_percent": 1.39, "volume": 7420000}
+  ],
+  "losers": [
+    {"symbol": "ADBE", "price": 497.44, "change": -11.88, "change_percent": -2.33, "volume": 5100000},
+    {"symbol": "NFLX", "price": 601.31, "change": -10.77, "change_percent": -1.76, "volume": 7300000},
+    {"symbol": "QQQ", "price": 441.56, "change": -4.95, "change_percent": -1.11, "volume": 46321000}
+  ]
+}

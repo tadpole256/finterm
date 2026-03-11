@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-base text-textPrimary antialiased;
+  font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+}
+
+a {
+  @apply text-accent;
+}
+
+.panel {
+  @apply rounded-xl border border-border bg-panel shadow-panel;
+}
+
+.panel-header {
+  @apply border-b border-border px-4 py-3;
+}
+
+.panel-body {
+  @apply p-4;
+}
+
+.table-cell {
+  @apply px-3 py-2 text-sm;
+}
+
+.kpi-label {
+  @apply text-xs uppercase tracking-wider text-textSecondary;
+}
+
+.kpi-value {
+  @apply text-lg font-semibold text-textPrimary;
+}

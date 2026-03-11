@@ -1,0 +1,12 @@
+[
+  {"symbol": "AAPL", "name": "Apple Inc.", "exchange": "NASDAQ", "asset_type": "equity", "sector": "Technology", "industry": "Consumer Electronics", "market_cap": 2965000000000},
+  {"symbol": "MSFT", "name": "Microsoft Corporation", "exchange": "NASDAQ", "asset_type": "equity", "sector": "Technology", "industry": "Software", "market_cap": 3128000000000},
+  {"symbol": "NVDA", "name": "NVIDIA Corporation", "exchange": "NASDAQ", "asset_type": "equity", "sector": "Technology", "industry": "Semiconductors", "market_cap": 2280000000000},
+  {"symbol": "AMZN", "name": "Amazon.com, Inc.", "exchange": "NASDAQ", "asset_type": "equity", "sector": "Consumer Discretionary", "industry": "Internet Retail", "market_cap": 1940000000000},
+  {"symbol": "GOOGL", "name": "Alphabet Inc.", "exchange": "NASDAQ", "asset_type": "equity", "sector": "Communication Services", "industry": "Internet Content & Information", "market_cap": 1790000000000},
+  {"symbol": "META", "name": "Meta Platforms, Inc.", "exchange": "NASDAQ", "asset_type": "equity", "sector": "Communication Services", "industry": "Internet Content & Information", "market_cap": 1310000000000},
+  {"symbol": "SPY", "name": "SPDR S&P 500 ETF Trust", "exchange": "NYSEARCA", "asset_type": "etf", "sector": null, "industry": null, "market_cap": 470000000000},
+  {"symbol": "QQQ", "name": "Invesco QQQ Trust", "exchange": "NASDAQ", "asset_type": "etf", "sector": null, "industry": null, "market_cap": 290000000000},
+  {"symbol": "IWM", "name": "iShares Russell 2000 ETF", "exchange": "NYSEARCA", "asset_type": "etf", "sector": null, "industry": null, "market_cap": 73000000000},
+  {"symbol": "XLF", "name": "Financial Select Sector SPDR Fund", "exchange": "NYSEARCA", "asset_type": "etf", "sector": "Financials", "industry": null, "market_cap": 39000000000}
+]

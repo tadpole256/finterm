@@ -1,0 +1,25 @@
+{
+  "name": "finterm",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "npm run dev:web & npm run dev:api",
+    "dev:web": "npm run dev --workspace @finterm/web",
+    "dev:api": "cd apps/api && python3 -m uvicorn app.main:app --reload --port 8000",
+    "dev:worker": "cd apps/worker && python3 -m worker.main",
+    "lint": "npm run lint:web && npm run lint:api",
+    "lint:web": "npm run lint --workspace @finterm/web",
+    "lint:api": "cd apps/api && python3 -m ruff check .",
+    "typecheck": "npm run typecheck:web && npm run typecheck:api",
+    "typecheck:web": "npm run typecheck --workspace @finterm/web",
+    "typecheck:api": "cd apps/api && python3 -m mypy app",
+    "test": "npm run test:web && npm run test:api",
+    "test:web": "npm run test --workspace @finterm/web",
+    "test:api": "cd apps/api && python3 -m pytest",
+    "db:migrate": "cd apps/api && python3 -m alembic upgrade head",
+    "db:seed": "cd apps/api && python3 -m app.seed"
+  }
+}

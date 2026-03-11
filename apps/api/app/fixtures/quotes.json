@@ -1,0 +1,12 @@
+[
+  {"symbol": "AAPL", "price": 219.15, "change": 1.24, "change_percent": 0.57, "volume": 63854000},
+  {"symbol": "MSFT", "price": 423.62, "change": -2.82, "change_percent": -0.66, "volume": 24551000},
+  {"symbol": "NVDA", "price": 874.8, "change": 16.72, "change_percent": 1.95, "volume": 52987000},
+  {"symbol": "AMZN", "price": 193.44, "change": -0.85, "change_percent": -0.44, "volume": 31842000},
+  {"symbol": "GOOGL", "price": 167.53, "change": 0.61, "change_percent": 0.37, "volume": 27648000},
+  {"symbol": "META", "price": 509.77, "change": 3.3, "change_percent": 0.65, "volume": 16233000},
+  {"symbol": "SPY", "price": 512.34, "change": -3.12, "change_percent": -0.61, "volume": 82140000},
+  {"symbol": "QQQ", "price": 441.56, "change": -4.95, "change_percent": -1.11, "volume": 46321000},
+  {"symbol": "IWM", "price": 201.22, "change": 1.43, "change_percent": 0.72, "volume": 27113000},
+  {"symbol": "XLF", "price": 42.17, "change": -0.11, "change_percent": -0.26, "volume": 34525000}
+]
