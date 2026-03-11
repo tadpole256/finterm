@@ -385,6 +385,75 @@ class BrokerSyncRun(Base, TimestampMixin):
     details: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
 
 
+class BrokerOrderEvent(Base, TimestampMixin):
+    __tablename__ = "broker_order_events"
+    __table_args__ = (
+        Index("ix_broker_order_events_user_submitted", "user_id", "submitted_at"),
+        Index("ix_broker_order_events_symbol_status", "symbol", "status"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), nullable=False)
+    broker_account_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("broker_accounts.id"), nullable=True
+    )
+    external_order_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    symbol: Mapped[str] = mapped_column(String(24), nullable=False)
+    side: Mapped[str] = mapped_column(String(8), nullable=False)
+    order_type: Mapped[str] = mapped_column(String(16), nullable=False, default="market")
+    status: Mapped[str] = mapped_column(String(24), nullable=False, default="submitted")
+    quantity: Mapped[Decimal] = mapped_column(Numeric(18, 6), nullable=False)
+    limit_price: Mapped[Decimal | None] = mapped_column(Numeric(18, 6), nullable=True)
+    filled_quantity: Mapped[Decimal] = mapped_column(Numeric(18, 6), nullable=False, default=Decimal("0"))
+    avg_fill_price: Mapped[Decimal | None] = mapped_column(Numeric(18, 6), nullable=True)
+    submitted_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=func.now())
+    status_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    event_payload: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+
+
+class ReconciliationException(Base, TimestampMixin):
+    __tablename__ = "reconciliation_exceptions"
+    __table_args__ = (
+        Index("ix_reconciliation_exceptions_user_status", "user_id", "status"),
+        Index("ix_reconciliation_exceptions_symbol_type", "symbol", "issue_type"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), nullable=False)
+    portfolio_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("portfolios.id"), nullable=True)
+    symbol: Mapped[str] = mapped_column(String(24), nullable=False)
+    issue_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    severity: Mapped[str] = mapped_column(String(16), nullable=False, default="medium")
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="open")
+    local_quantity: Mapped[Decimal | None] = mapped_column(Numeric(18, 6), nullable=True)
+    broker_quantity: Mapped[Decimal | None] = mapped_column(Numeric(18, 6), nullable=True)
+    local_market_value: Mapped[Decimal | None] = mapped_column(Numeric(20, 2), nullable=True)
+    broker_market_value: Mapped[Decimal | None] = mapped_column(Numeric(20, 2), nullable=True)
+    detected_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=func.now())
+    last_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=func.now())
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    resolution_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    details: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+
+
+class TradeJournalEntry(Base, TimestampMixin):
+    __tablename__ = "trade_journal_entries"
+    __table_args__ = (Index("ix_trade_journal_entries_user_symbol_created", "user_id", "symbol", "created_at"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), nullable=False)
+    portfolio_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("portfolios.id"), nullable=True)
+    transaction_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("transactions.id"), nullable=True)
+    broker_order_event_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("broker_order_events.id"), nullable=True
+    )
+    symbol: Mapped[str | None] = mapped_column(String(24), nullable=True)
+    entry_type: Mapped[str] = mapped_column(String(32), nullable=False, default="observation")
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    tags: Mapped[list[str]] = mapped_column(JSON, default=list)
+
+
 class SavedScreen(Base, TimestampMixin):
     __tablename__ = "saved_screens"
 

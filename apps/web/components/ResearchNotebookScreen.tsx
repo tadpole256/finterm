@@ -644,6 +644,18 @@ export function ResearchNotebookScreen({
                         <p className="mt-1 text-xs text-textSecondary">{citation.snippet}</p>
                         <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-textSecondary">
                           <span>Score {citation.score.toFixed(2)}</span>
+                          <span>
+                            Lexical{" "}
+                            {typeof citation.lexical_score === "number"
+                              ? citation.lexical_score.toFixed(2)
+                              : "n/a"}
+                          </span>
+                          <span>
+                            Semantic{" "}
+                            {typeof citation.semantic_score === "number"
+                              ? citation.semantic_score.toFixed(2)
+                              : "n/a"}
+                          </span>
                           <span>{formatDate(citation.as_of)}</span>
                         </div>
                       </article>

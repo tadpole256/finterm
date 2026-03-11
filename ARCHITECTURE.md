@@ -2,127 +2,161 @@
 
 ## System Shape
 
-Finterm is a modular monorepo with service boundaries by domain, deployed as a single local stack for personal use.
+Finterm is a modular monorepo for one advanced user, deployed locally as a single stack:
 
-- **Web**: Next.js App Router (`apps/web`)
-- **API**: FastAPI service (`apps/api`)
-- **Worker**: Python background loop scaffold (`apps/worker`)
-- **Persistence**: PostgreSQL
-- **Cache/coordination**: Redis (with in-process fallback)
+- Web: Next.js App Router (`apps/web`)
+- API: FastAPI + SQLAlchemy + Alembic (`apps/api`)
+- Worker: Python polling loop (`apps/worker`)
+- Durable store: PostgreSQL
+- Cache/coordination: Redis with in-process fallback
+
+The architecture favors clear domain boundaries and provider adapters over early microservice complexity.
 
 ## Domain Modules
 
 ### 1) Market Data Domain
 
 Responsibilities:
-- market snapshot
-- quote snapshots
-- historical bars
-- movers
 - instrument search/detail
-- freshness signaling
+- quote snapshots and historical bars
+- dashboard aggregate, movers, and freshness signaling
+- chart indicator inputs
 
-Implemented modules:
+Key modules:
 - `app/services/market_provider.py`
 - `app/services/market.py`
 - `app/services/cache.py`
-- routes in `app/api/routes/market.py`
+- routes: `app/api/routes/market.py`, `app/api/routes/instruments.py`, `app/api/routes/prices.py`
 
-### 2) Research Domain
+### 2) Workspace + Watchlist Domain
 
-Implemented behaviors:
-- `research_notes`, `research_tags`, `research_note_tags`, `theses`, `catalyst_events`
-- research note CRUD + search (`/research/notes`)
-- thesis CRUD (`/research/theses`)
-- research theme lookup (`/research/themes`)
-- research notebook UI at `/research`
-- security workspace continues to surface recent notes/catalysts for symbol context
+Responsibilities:
+- watchlist CRUD, symbol membership, reordering
+- workspace layout persistence per page
+- security workspace aggregate payload
 
-### 3) Portfolio Domain
+Key modules:
+- `app/services/watchlists.py`
+- `app/services/workspace.py`
+- routes: `app/api/routes/watchlists.py`, `app/api/routes/workspaces.py`
 
-Schema implemented for future phases:
-- `portfolios`, `positions`, `transactions`
+### 3) Research + AI Domain
 
-No full portfolio UI/API behavior in Phase 1–2 by design.
+Responsibilities:
+- research notes, tags, theses, catalysts
+- note synthesis and daily/periodic knowledge views
+- citation-backed Q&A over notes/filings corpus
+- hybrid ranking (lexical + semantic + recency)
 
-### 4) Alerts Domain
+Key modules:
+- `app/services/research.py`
+- `app/services/research_qa.py`
+- `app/services/retrieval_provider.py`
+- routes: `app/api/routes/research.py`, `app/api/routes/ai.py`
 
-Schema + dashboard surfacing:
-- `alerts`, `alert_events`, `notifications`
-- active alerts shown on dashboard from seeded rules
+### 4) Portfolio + Risk Domain
 
-### 5) Filings & Macro Domain
+Responsibilities:
+- transactions, position rollups, cost basis/P&L
+- exposure and risk snapshots (concentration/factor/scenario stubs)
+- linkage to research/watchlists and broker reconciliation
 
-Implemented baseline:
-- `filings`, `filing_summaries`, `macro_series`, `macro_events`
-- security workspace shows recent filings
-- dashboard shows macro events
+Key modules:
+- `app/services/portfolio.py`
+- `app/services/risk.py`
+- routes: `app/api/routes/portfolio.py`
 
-### 6) AI Assist Domain
+### 5) Alerts + Briefs Domain
 
-Implemented behaviors:
-- seeded daily brief content (`daily_briefs`)
-- seeded “what changed” narrative in security workspace
-- note synthesis endpoint (`/research/synthesis`) and alias (`/ai/note-synthesis`)
-- heuristic synthesis service deriving:
-  - synthesized thesis
-  - open questions
-  - risks
-  - next items to watch
+Responsibilities:
+- alert definitions and evaluation
+- notification history/read state
+- daily brief generation and retrieval
+
+Key modules:
+- `app/services/alerts.py`
+- `app/services/briefs.py`
+- routes: `app/api/routes/alerts.py`, `app/api/routes/notifications.py`, `app/api/routes/briefs.py`
+- worker hooks in `apps/worker/main.py`
+
+### 6) Filings + Macro Domain
+
+Responsibilities:
+- filings and macro ingestion through adapters
+- filing summary/change detection heuristics
+- dashboard/security context integration
+
+Key modules:
+- `app/services/filings_provider.py`
+- `app/services/filings.py`
+- `app/services/macro_provider.py`
+- `app/services/macro.py`
+- routes: `app/api/routes/filings.py`, `app/api/routes/macro.py`
+
+### 7) Broker + Journal Domain
+
+Responsibilities:
+- broker account sync snapshots
+- reconciliation vs local portfolio
+- reconciliation exception lifecycle (open/resolved)
+- order preview + order-event capture (capability-gated)
+- trade journal linkage to transactions/order events
+
+Key modules:
+- `app/services/broker_provider.py`
+- `app/services/broker.py`
+- `app/services/journal.py`
+- routes: `app/api/routes/broker.py`, `app/api/routes/journal.py`
+
+## Data Model and Separation
+
+Durable research/portfolio state is stored separately from transient market data snapshots:
+
+- Durable research and planning: `research_notes`, `theses`, `catalyst_events`, `trade_journal_entries`
+- Durable portfolio/accounting: `portfolios`, `positions`, `transactions`
+- External sync snapshots/audit: `quote_snapshots`, `historical_bars`, `broker_*`, `filings`, `macro_*`
+- Operational outputs: `alerts`, `alert_events`, `notifications`, `daily_briefs`, `workspace_layouts`
+
+Phase 9 additions:
+- `broker_order_events`
+- `reconciliation_exceptions`
+- `trade_journal_entries`
 
 ## Data Flow
 
-1. UI calls `/api/v1/...` endpoints.
-2. API domain service resolves request:
-   - reads/writes durable state in PostgreSQL
-   - requests market payloads from provider adapter
-   - applies caching for dashboard and bars
-3. API returns normalized response envelope with:
-   - `source_provider`
-   - `as_of`
-   - `delay_seconds`
-   - `freshness_status`
-   - `is_stale`
-4. UI renders stale/degraded state explicitly.
+1. UI calls `/api/v1/...`.
+2. Route layer resolves user context and provider configuration from env-backed dependencies.
+3. Domain service orchestrates DB access, provider calls, cache, and derived logic.
+4. Response payload includes provider/freshness metadata where applicable.
+5. UI renders data with explicit stale/degraded indicators and does not simulate live feeds.
+
+## Provider Abstraction Model
+
+Provider adapters are selected through config and kept independent:
+
+- `MARKET_DATA_PROVIDER=mock|delayed|premium`
+- `FILINGS_PROVIDER=mock_sec|...`
+- `MACRO_PROVIDER=mock_macro|...`
+- `BROKER_PROVIDER=mock_broker|...`
+- `RETRIEVAL_PROVIDER=mock_embed|...`
+
+Safety gate:
+- `BROKER_TRADING_ENABLED=false` by default. Execution-adjacent endpoints remain preview/simulation-focused unless explicitly enabled.
 
 ## Caching Model
 
-- Redis cache keys are namespaced by provider and query params:
-  - `finterm:{provider}:dashboard:{user_id}`
-  - `finterm:{provider}:bars:{symbol}:{timeframe}`
-- If Redis is unavailable, service falls back to in-memory cache and marks degraded freshness semantics.
+Redis cache keys are namespaced by provider and request shape (for example dashboard and bar series keys).  
+If Redis is unavailable, API falls back to in-process cache and marks degraded freshness semantics in response metadata.
 
-## Ingestion/Seed Model
+## Ingestion and Scheduling Model
 
-- Deterministic fixture-backed provider data (`app/fixtures/*.json`)
-- `app/seed.py` seeds DB with:
-  - instruments
-  - watchlists + items
-  - quote snapshots
-  - historical bars
-  - macro events
-  - alerts
-  - filings + filing summaries
-  - research notes + catalysts
-  - daily brief
-  - workspace layout
+- Seed pipeline (`app/seed.py`) provides deterministic local datasets for all implemented domains.
+- Worker loop (`apps/worker`) runs periodic alert/brief/filings/macro jobs and is intentionally lightweight for local operation.
+- The scheduler can be replaced later without changing domain service contracts.
 
-## Provider Abstraction
+## Extensibility Notes
 
-`MarketDataProvider` protocol defines swappable data backends.
-
-Current implementation:
-- `MockMarketDataProvider`
-
-Configured by env:
-- `MARKET_DATA_PROVIDER=mock|delayed|premium`
-- non-mock names currently route to same mock backend for MVP compatibility
-
-This keeps API/services stable while live providers are integrated later.
-
-## Future Extensibility Notes
-
-- Add broker adapter boundary separately from market data provider.
-- Move worker from loop scaffold to scheduled job framework when Phase 5 starts.
-- Introduce dedicated AI service interface for summarization/change detection workflows.
-- Add provider entitlement checks and per-feed delay/rights metadata before live feed enablement.
+- Keep broker execution and reconciliation concerns isolated from market data adapters.
+- Preserve deterministic mock fixtures to keep CI and local testing stable.
+- Evolve retrieval provider from mock embeddings to a managed/vector backend without changing API contracts.
+- Add entitlement-aware metadata before integrating premium market feeds or broker trade placement.

@@ -10,6 +10,10 @@ from sqlalchemy import delete, select
 from app.core.config import get_settings
 from app.db.models import (
     Alert,
+    BrokerAccount,
+    BrokerOrderEvent,
+    BrokerPositionSnapshot,
+    BrokerSyncRun,
     CatalystEvent,
     DailyBrief,
     Filing,
@@ -21,8 +25,10 @@ from app.db.models import (
     Portfolio,
     Position,
     QuoteSnapshot,
+    ReconciliationException,
     ResearchNote,
     Thesis,
+    TradeJournalEntry,
     Transaction,
     User,
     Watchlist,
@@ -43,6 +49,12 @@ def main() -> None:
     brief_payload = json.loads((fixture_dir / "daily_brief.json").read_text())
 
     with SessionLocal() as db:
+        db.execute(delete(TradeJournalEntry))
+        db.execute(delete(ReconciliationException))
+        db.execute(delete(BrokerOrderEvent))
+        db.execute(delete(BrokerPositionSnapshot))
+        db.execute(delete(BrokerSyncRun))
+        db.execute(delete(BrokerAccount))
         db.execute(delete(Transaction))
         db.execute(delete(Position))
         db.execute(delete(Portfolio))

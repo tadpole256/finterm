@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import and_, select
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_user_id
+from app.api.deps import get_retrieval_provider, get_user_id
 from app.db.models import CatalystEvent, Instrument
 from app.db.session import get_db
 from app.schemas.research import (
@@ -20,6 +20,7 @@ from app.schemas.research import (
 from app.services.ai_notes import synthesize_notes
 from app.services.research import ResearchService
 from app.services.research_qa import answer_research_question
+from app.services.retrieval_provider import RetrievalProvider
 
 router = APIRouter(prefix="/research", tags=["research"])
 ai_router = APIRouter(prefix="/ai", tags=["ai"])
@@ -197,11 +198,13 @@ def get_research_qa(
     symbol: str | None = Query(default=None),
     limit: int = Query(default=6, ge=1, le=10),
     user_id: str = Depends(get_user_id),
+    retrieval_provider: RetrievalProvider = Depends(get_retrieval_provider),
     db: Session = Depends(get_db),
 ) -> dict[str, object]:
     try:
         return answer_research_question(
             db=db,
+            retrieval_provider=retrieval_provider,
             user_id=user_id,
             question=question,
             symbol=symbol,

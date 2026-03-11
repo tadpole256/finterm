@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -8,6 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.models import Filing, FilingSummary, Instrument, ResearchNote
+from app.services.retrieval_provider import RetrievalProvider
 
 TOKEN_PATTERN = re.compile(r"[a-zA-Z][a-zA-Z0-9_]+")
 STOP_WORDS = {
@@ -61,8 +63,18 @@ class CandidateDoc:
     url: str | None
 
 
+@dataclass(slots=True)
+class ScoreBreakdown:
+    total: float
+    lexical: float
+    semantic: float
+    recency: float
+    snippet: str
+
+
 def answer_research_question(
     db: Session,
+    retrieval_provider: RetrievalProvider,
     user_id: str,
     question: str,
     symbol: str | None = None,
@@ -79,7 +91,7 @@ def answer_research_question(
             "question": normalized_question,
             "symbol": scope_symbol,
             "answered_at": datetime.now(UTC),
-            "source_model": "heuristic-retrieval-v1",
+            "source_model": f"hybrid-{retrieval_provider.model_name()}",
             "answer": "No notes or filings found in the selected scope.",
             "citations": [],
             "coverage_count": 0,
@@ -87,35 +99,47 @@ def answer_research_question(
         }
 
     question_tokens = _tokenize(normalized_question)
+    semantic_scores = _semantic_scores(retrieval_provider, normalized_question, candidates)
 
-    ranked: list[tuple[CandidateDoc, float, str]] = []
-    for candidate in candidates:
-        score, snippet = _score_candidate(candidate, question_tokens)
-        ranked.append((candidate, score, snippet))
+    ranked: list[tuple[CandidateDoc, ScoreBreakdown]] = []
+    for index, candidate in enumerate(candidates):
+        score = _score_candidate(
+            candidate=candidate,
+            question_tokens=question_tokens,
+            semantic_score=semantic_scores[index] if index < len(semantic_scores) else 0.0,
+        )
+        ranked.append((candidate, score))
 
-    ranked.sort(key=lambda item: item[1], reverse=True)
+    ranked.sort(key=lambda item: item[1].total, reverse=True)
     top_ranked = ranked[: max(1, min(limit, 10))]
 
-    if top_ranked and top_ranked[0][1] <= 0:
-        # Fallback: if query terms do not overlap, keep recent context for continuity.
-        top_ranked = sorted(top_ranked, key=lambda item: item[0].as_of, reverse=True)
+    if top_ranked and top_ranked[0][1].total <= 0:
+        # Fallback: if scoring is flat, keep newest docs first.
+        top_ranked = sorted(
+            top_ranked,
+            key=lambda item: _normalize_datetime(item[0].as_of),
+            reverse=True,
+        )
 
     citations = []
     summary_lines: list[str] = []
-    for candidate, score, snippet in top_ranked:
+    for candidate, breakdown in top_ranked:
         citations.append(
             {
                 "source_type": candidate.source_type,
                 "source_id": candidate.source_id,
                 "symbol": candidate.symbol,
                 "title": candidate.title,
-                "snippet": snippet,
-                "score": round(score, 4),
+                "snippet": breakdown.snippet,
+                "score": round(breakdown.total, 4),
+                "lexical_score": round(breakdown.lexical, 4),
+                "semantic_score": round(breakdown.semantic, 4),
+                "recency_score": round(breakdown.recency, 4),
                 "as_of": candidate.as_of,
                 "url": candidate.url,
             }
         )
-        summary_lines.append(f"{candidate.title}: {snippet}")
+        summary_lines.append(f"{candidate.title}: {breakdown.snippet}")
 
     answer = _build_answer(normalized_question, summary_lines)
 
@@ -123,7 +147,7 @@ def answer_research_question(
         "question": normalized_question,
         "symbol": scope_symbol,
         "answered_at": datetime.now(UTC),
-        "source_model": "heuristic-retrieval-v1",
+        "source_model": f"hybrid-{retrieval_provider.model_name()}",
         "answer": answer,
         "citations": citations,
         "coverage_count": len(citations),
@@ -196,25 +220,48 @@ def _collect_candidates(db: Session, user_id: str, symbol: str | None) -> list[C
     return docs
 
 
-def _score_candidate(candidate: CandidateDoc, question_tokens: set[str]) -> tuple[float, str]:
+def _semantic_scores(
+    retrieval_provider: RetrievalProvider,
+    question: str,
+    candidates: list[CandidateDoc],
+) -> list[float]:
+    docs = [candidate.text for candidate in candidates]
+    vectors = retrieval_provider.embed([question, *docs])
+    if len(vectors) != len(docs) + 1:
+        return [0.0 for _ in docs]
+
+    query_vector = vectors[0]
+    return [max(0.0, _cosine_similarity(query_vector, vector)) for vector in vectors[1:]]
+
+
+def _score_candidate(
+    candidate: CandidateDoc,
+    question_tokens: set[str],
+    semantic_score: float,
+) -> ScoreBreakdown:
     text = candidate.text.strip()
     if not text:
-        return 0.0, "No text extracted."
+        return ScoreBreakdown(total=0.0, lexical=0.0, semantic=0.0, recency=0.0, snippet="No text extracted.")
 
     doc_tokens = _tokenize(text)
     overlap = question_tokens & doc_tokens if question_tokens else set()
-    overlap_score = float(len(overlap))
 
-    coverage_score = 0.0
+    lexical_score = 0.0
     if question_tokens:
-        coverage_score = len(overlap) / max(len(question_tokens), 1)
+        lexical_score = len(overlap) / max(len(question_tokens), 1)
 
     age_days = max((datetime.now(UTC) - _normalize_datetime(candidate.as_of)).days, 0)
-    recency_score = max(0.0, 1 - (age_days / 365)) * 0.15
+    recency_score = max(0.0, 1 - (age_days / 365))
 
     snippet = _extract_snippet(text, overlap)
-    total_score = overlap_score + coverage_score + recency_score
-    return total_score, snippet
+    total_score = (0.55 * semantic_score) + (0.35 * lexical_score) + (0.10 * recency_score)
+    return ScoreBreakdown(
+        total=total_score,
+        lexical=lexical_score,
+        semantic=semantic_score,
+        recency=recency_score,
+        snippet=snippet,
+    )
 
 
 def _extract_snippet(text: str, overlap_tokens: set[str]) -> str:
@@ -252,6 +299,17 @@ def _tokenize(text: str) -> set[str]:
         if len(token) > 2 and token.lower() not in STOP_WORDS
     }
     return tokens
+
+
+def _cosine_similarity(vector_a: list[float], vector_b: list[float]) -> float:
+    if len(vector_a) != len(vector_b):
+        return 0.0
+    dot_product = sum(left * right for left, right in zip(vector_a, vector_b, strict=False))
+    norm_a = math.sqrt(sum(value * value for value in vector_a))
+    norm_b = math.sqrt(sum(value * value for value in vector_b))
+    if norm_a <= 0 or norm_b <= 0:
+        return 0.0
+    return dot_product / (norm_a * norm_b)
 
 
 def _clip(text: str, max_len: int = 220) -> str:

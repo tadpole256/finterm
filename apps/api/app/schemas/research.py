@@ -81,6 +81,9 @@ class ResearchQaCitation(BaseModel):
     title: str
     snippet: str
     score: float
+    lexical_score: float | None = None
+    semantic_score: float | None = None
+    recency_score: float | None = None
     as_of: datetime
     url: str | None
 

@@ -8,6 +8,7 @@ from app.services.cache import CacheService
 from app.services.filings_provider import FilingsProvider, filings_provider_from_name
 from app.services.macro_provider import MacroProvider, macro_provider_from_name
 from app.services.market_provider import MarketDataProvider, provider_from_name
+from app.services.retrieval_provider import RetrievalProvider, retrieval_provider_from_name
 
 
 @lru_cache(maxsize=1)
@@ -37,6 +38,17 @@ def get_macro_provider() -> MacroProvider:
 def get_broker_provider() -> BrokerProvider:
     settings = get_settings()
     return broker_provider_from_name(settings.broker_provider)
+
+
+def get_broker_trading_enabled() -> bool:
+    settings = get_settings()
+    return settings.broker_trading_enabled
+
+
+@lru_cache(maxsize=1)
+def get_retrieval_provider() -> RetrievalProvider:
+    settings = get_settings()
+    return retrieval_provider_from_name(settings.retrieval_provider)
 
 
 def get_user_id(x_user_id: str | None = Header(default=None)) -> str:

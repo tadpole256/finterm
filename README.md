@@ -9,7 +9,7 @@ Finterm is a personal market intelligence terminal for one advanced user. It foc
 - AI used for summarization and triage, not deterministic prediction claims.
 - Honest UI signals for stale/delayed/degraded data.
 
-## Current Scope (Implemented: Phase 1 + Phase 2 + Phase 3 + Phase 4 + Phase 5 + Phase 6 + Phase 7 + Phase 8 MVP)
+## Current Scope (Implemented: Phase 1 + Phase 2 + Phase 3 + Phase 4 + Phase 5 + Phase 6 + Phase 7 + Phase 8 + Phase 9 MVP)
 
 - Foundation monorepo (`Next.js` frontend, `FastAPI` backend, worker scaffold).
 - Full baseline schema + Alembic migration for required core entities.
@@ -24,7 +24,11 @@ Finterm is a personal market intelligence terminal for one advanced user. It foc
 - Screener workspace (`/screener`) with richer filters, saved screens, keyboard shortcuts, and result drill-through to security workspace.
 - Broker workspace (`/broker`) with read-only broker sync snapshots and reconciliation against local portfolio holdings.
 - Portfolio risk snapshot (`/portfolio`) with concentration, factor bucket heuristics, and scenario stress stubs.
-- Research QA retrieval (`/research`) over notes + filings with explicit citation traces.
+- Research QA retrieval (`/research`) over notes + filings with citation traces and hybrid lexical/semantic scoring.
+- Broker capability + session status API with explicit trading capability gates.
+- Order preview API and broker order event ingestion flow (mock adapter) with reconciliation-linked audit trail.
+- Reconciliation exception lifecycle tracking (open/resolved) with resolution notes.
+- Trade journal workspace (`/journal`) and API with optional linkage to transactions and broker order events.
 - API routes for market, watchlists, bars, instrument search/detail, workspace security payload, layout persistence, basic screening, and research.
 - Portfolio APIs for overview, positions, transaction history, create transaction, and delete transaction.
 - Alerts + notifications + brief APIs with worker execution loop for scheduled evaluations/generation.
@@ -37,7 +41,10 @@ Finterm is a personal market intelligence terminal for one advanced user. It foc
 - **API (`apps/api`)**: FastAPI, SQLAlchemy ORM, Alembic migrations, domain services.
 - **Worker (`apps/worker`)**: background loop scaffold for scheduled jobs (alerts/brief generation hooks).
 - **Data**: PostgreSQL for durable domain state; Redis for cache/coordination with graceful fallback.
-- **Providers**: `MarketDataProvider` interface with `MockMarketDataProvider` implemented (`MARKET_DATA_PROVIDER=mock|delayed|premium`, currently mock-backed).
+- **Providers**:
+  - `MarketDataProvider` (`MARKET_DATA_PROVIDER=mock|delayed|premium`, mock-backed today)
+  - `BrokerProvider` (`BROKER_PROVIDER=mock_broker`) with trading flag gate (`BROKER_TRADING_ENABLED`)
+  - `RetrievalProvider` (`RETRIEVAL_PROVIDER=mock_embed`) for citation ranking
 
 Detailed design: see [ARCHITECTURE.md](./ARCHITECTURE.md).
 
@@ -78,6 +85,10 @@ cp .env.example .env
 cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env.local
 ```
+
+Important Phase 9 config flags:
+- `BROKER_TRADING_ENABLED=false` keeps broker flows preview/simulated only.
+- `RETRIEVAL_PROVIDER=mock_embed` enables deterministic hybrid retrieval scoring for local QA.
 
 5. Apply migration and seed:
 
@@ -130,8 +141,14 @@ Optional worker env knobs:
 - `POST /api/v1/screening/screens/{screen_id}/run`
 - `GET /api/v1/portfolio/risk`
 - `GET /api/v1/broker/accounts`
+- `GET /api/v1/broker/capabilities`
 - `POST /api/v1/broker/sync`
 - `GET /api/v1/broker/reconcile`
+- `POST /api/v1/broker/orders/preview`
+- `GET|POST /api/v1/broker/order-events`
+- `GET /api/v1/broker/reconciliation-exceptions`
+- `PATCH /api/v1/broker/reconciliation-exceptions/{exception_id}/resolve`
+- `GET|POST /api/v1/journal/entries`
 - `GET|POST|PATCH|DELETE /api/v1/research/notes...`
 - `GET|POST|PATCH|DELETE /api/v1/research/theses...`
 - `GET /api/v1/research/themes`

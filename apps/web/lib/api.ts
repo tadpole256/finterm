@@ -2,6 +2,9 @@ import {
   mockAlertEvaluationSummary,
   mockAlertEvents,
   mockBrokerAccounts,
+  mockBrokerCapabilityStatus,
+  mockBrokerOrderEvents,
+  mockBrokerOrderPreview,
   mockBrokerReconciliation,
   mockBrokerSyncSummary,
   mockDailyBriefDetail,
@@ -17,11 +20,13 @@ import {
   mockNotifications,
   mockPortfolioOverview,
   mockPortfolioRiskSnapshot,
+  mockReconciliationExceptions,
   mockResearchQaResponse,
   mockResearchNotes,
   mockSavedScreens,
   mockScreenerResults,
   mockSecurityWorkspace,
+  mockTradeJournalEntries,
   mockTheses,
   mockWatchlists
 } from "./mock";
@@ -29,6 +34,9 @@ import type {
   AlertEvaluationSummary,
   AlertEvent,
   BrokerAccount,
+  BrokerCapabilityStatus,
+  BrokerOrderEvent,
+  BrokerOrderPreview,
   BrokerReconciliation,
   BrokerSyncSummary,
   DashboardPayload,
@@ -48,10 +56,12 @@ import type {
   PortfolioRiskSnapshot,
   PortfolioTransaction,
   PortfolioTransactionSide,
+  ReconciliationException,
   ResearchQaResponse,
   ResearchNote,
   SecurityWorkspacePayload,
   Thesis,
+  TradeJournalEntry,
   Watchlist,
   WatchlistLayoutState
 } from "./types";
@@ -583,6 +593,14 @@ export async function getBrokerAccounts(): Promise<BrokerAccount[]> {
   }
 }
 
+export async function getBrokerCapabilities(): Promise<BrokerCapabilityStatus> {
+  try {
+    return await request<BrokerCapabilityStatus>("/api/v1/broker/capabilities");
+  } catch {
+    return mockBrokerCapabilityStatus;
+  }
+}
+
 export async function syncBroker(): Promise<BrokerSyncSummary> {
   try {
     return await request<BrokerSyncSummary>("/api/v1/broker/sync", {
@@ -600,4 +618,139 @@ export async function getBrokerReconciliation(portfolioId?: string): Promise<Bro
   } catch {
     return mockBrokerReconciliation;
   }
+}
+
+export interface PreviewBrokerOrderPayload {
+  symbol: string;
+  side: "buy" | "sell";
+  order_type: "market" | "limit";
+  quantity: number;
+  limit_price?: number;
+}
+
+export async function previewBrokerOrder(
+  payload: PreviewBrokerOrderPayload
+): Promise<BrokerOrderPreview> {
+  try {
+    return await request<BrokerOrderPreview>("/api/v1/broker/orders/preview", {
+      method: "POST",
+      body: JSON.stringify(payload)
+    });
+  } catch {
+    return mockBrokerOrderPreview;
+  }
+}
+
+export interface CreateBrokerOrderEventPayload {
+  broker_account_id?: string | null;
+  external_order_id: string;
+  symbol: string;
+  side: "buy" | "sell";
+  order_type?: "market" | "limit";
+  status?: string;
+  quantity: number;
+  limit_price?: number | null;
+  filled_quantity?: number;
+  avg_fill_price?: number | null;
+  status_updated_at?: string | null;
+  event_payload?: Record<string, unknown>;
+  create_journal_entry?: boolean;
+}
+
+export async function createBrokerOrderEvent(
+  payload: CreateBrokerOrderEventPayload
+): Promise<BrokerOrderEvent> {
+  return request<BrokerOrderEvent>("/api/v1/broker/order-events", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function getBrokerOrderEvents(params: {
+  symbol?: string;
+  status?: string;
+  limit?: number;
+} = {}): Promise<BrokerOrderEvent[]> {
+  try {
+    const query = new URLSearchParams();
+    if (params.symbol) {
+      query.set("symbol", params.symbol);
+    }
+    if (params.status) {
+      query.set("status", params.status);
+    }
+    if (params.limit) {
+      query.set("limit", String(params.limit));
+    }
+    const suffix = query.size > 0 ? `?${query.toString()}` : "";
+    return await request<BrokerOrderEvent[]>(`/api/v1/broker/order-events${suffix}`);
+  } catch {
+    return mockBrokerOrderEvents;
+  }
+}
+
+export async function getReconciliationExceptions(status = "open"): Promise<ReconciliationException[]> {
+  try {
+    return await request<ReconciliationException[]>(
+      `/api/v1/broker/reconciliation-exceptions?status=${encodeURIComponent(status)}`
+    );
+  } catch {
+    return mockReconciliationExceptions;
+  }
+}
+
+export async function resolveReconciliationException(
+  exceptionId: string,
+  resolutionNote?: string
+): Promise<ReconciliationException> {
+  return request<ReconciliationException>(
+    `/api/v1/broker/reconciliation-exceptions/${exceptionId}/resolve`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ resolution_note: resolutionNote ?? null })
+    }
+  );
+}
+
+export async function getJournalEntries(params: {
+  symbol?: string;
+  entry_type?: string;
+  limit?: number;
+} = {}): Promise<TradeJournalEntry[]> {
+  try {
+    const query = new URLSearchParams();
+    if (params.symbol) {
+      query.set("symbol", params.symbol);
+    }
+    if (params.entry_type) {
+      query.set("entry_type", params.entry_type);
+    }
+    if (params.limit) {
+      query.set("limit", String(params.limit));
+    }
+    const suffix = query.size > 0 ? `?${query.toString()}` : "";
+    return await request<TradeJournalEntry[]>(`/api/v1/journal/entries${suffix}`);
+  } catch {
+    return mockTradeJournalEntries;
+  }
+}
+
+export interface CreateJournalEntryPayload {
+  symbol?: string | null;
+  entry_type?: string;
+  title: string;
+  body: string;
+  tags?: string[];
+  portfolio_id?: string | null;
+  transaction_id?: string | null;
+  broker_order_event_id?: string | null;
+}
+
+export async function createJournalEntry(
+  payload: CreateJournalEntryPayload
+): Promise<TradeJournalEntry> {
+  return request<TradeJournalEntry>("/api/v1/journal/entries", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
 }

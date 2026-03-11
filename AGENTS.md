@@ -4,58 +4,59 @@ Guidance for coding agents working in this repository.
 
 ## Mission
 
-Build and evolve a personal market intelligence terminal with production-quality engineering discipline, while remaining legally cautious around market-data licensing.
+Build and evolve a serious personal market intelligence terminal with production-quality discipline and explicit legal/data caution around provider entitlements.
 
-## Core Standards
+## Current Scope Guardrail
 
-- Keep domain logic out of UI components.
-- Keep provider-specific code behind provider interfaces.
-- Prefer small, reviewable logical changes.
-- Do not fake real-time data; always expose freshness/staleness.
-- Preserve explicit source/provider metadata on market-derived records.
+- Implemented scope is Phase 1 through Phase 9 (MVP).
+- Do not silently add Phase 10+ behavior without an explicit user request.
+- When scope changes, update `README.md`, `ROADMAP.md`, and `TODO.md` in the same change set.
 
-## Phase Guardrails
+## Engineering Standards
 
-- Current implemented scope is Phase 1 through Phase 3.
-- Do not silently add Phase 4+ product behavior unless explicitly requested.
-- If extending scope, update `ROADMAP.md` and `TODO.md` in the same change.
+- Keep UI rendering separate from domain and provider logic.
+- Keep provider-specific integration behind interfaces (`MarketDataProvider`, `BrokerProvider`, `RetrievalProvider`, filings/macro adapters).
+- Preserve freshness/source metadata in market-facing responses.
+- Never imply real-time if feed is delayed or mocked.
+- Prefer small, reviewable, test-backed changes over broad rewrites.
 
-## Data/Legal Guardrails
+## Legal/Data Guardrails
 
-- Never assume data is redistributable.
-- Treat entitlements as external configuration.
-- Keep provider adapters swappable and explicit.
-- Mark mock/delayed data clearly in API and UI.
+- Never assume redistribution rights for market data.
+- Keep entitlements/config externalized to env and adapter settings.
+- Keep mock, delayed, and premium/personal-broker adapters clearly separated.
+- Surface degraded/stale data honestly in API and UI.
 
 ## Repo Layout
 
-- `apps/web`: Next.js frontend
-- `apps/api`: FastAPI backend, migrations, seed pipeline, tests
-- `apps/worker`: background worker scaffold
-- `infra`: environment and container orchestration assets
-- `README.md`, `ARCHITECTURE.md`, `ROADMAP.md`, `TODO.md`: source-of-truth docs
+- `apps/web`: Next.js frontend (App Router, Tailwind, Vitest smoke tests)
+- `apps/api`: FastAPI backend (SQLAlchemy, Alembic, pytest, ruff, mypy)
+- `apps/worker`: background polling/scheduler loop
+- `infra`: local infra templates and future deployment placeholders
+- Root docs: `README.md`, `ARCHITECTURE.md`, `ROADMAP.md`, `TODO.md`
 
 ## Commands
 
 - Install JS deps: `npm install`
 - Install API deps: `cd apps/api && python3 -m pip install -r requirements-dev.txt`
 - Run app: `npm run dev`
+- Run worker: `npm run dev:worker`
 - Lint: `npm run lint`
 - Typecheck: `npm run typecheck`
-- Tests: `npm run test`
-- Migrate DB: `npm run db:migrate`
-- Seed DB: `npm run db:seed`
+- Test: `npm run test`
+- DB migrate: `npm run db:migrate`
+- DB seed: `npm run db:seed`
 
 ## Testing Expectations
 
-- Keep frontend smoke tests for primary screens current.
-- Add/maintain backend integration tests for critical routes.
-- Add targeted unit tests when logic complexity rises (indicators, filters, calculations).
-- All PRs/changes should keep lint, typecheck, and tests passing.
+- Keep smoke coverage for all primary workspaces (`/`, `/watchlists`, `/security/[symbol]`, `/portfolio`, `/alerts`, `/research`, `/screener`, `/broker`, `/journal`).
+- Keep integration tests for critical route families and high-risk service logic.
+- Maintain deterministic fixtures for provider-backed flows and indicator/ranking logic.
+- Merge-ready changes must pass `npm run lint`, `npm run typecheck`, `npm run test`.
 
-## Non-goals
+## Non-Goals
 
-- Enterprise multi-tenant SaaS concerns.
-- Fake Bloomberg visual clone.
-- Over-engineered microservices for personal MVP scope.
-- Price prediction claims disguised as AI features.
+- Multi-tenant enterprise SaaS complexity.
+- UI mimicry of Bloomberg branding/look-and-feel.
+- Hidden coupling of broker execution logic into market data adapters.
+- AI claims of guaranteed market prediction.

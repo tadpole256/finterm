@@ -2,6 +2,9 @@ import type {
   AlertEvaluationSummary,
   AlertEvent,
   BrokerAccount,
+  BrokerCapabilityStatus,
+  BrokerOrderEvent,
+  BrokerOrderPreview,
   BrokerReconciliation,
   BrokerSyncSummary,
   DailyBriefDetail,
@@ -18,9 +21,11 @@ import type {
   NotificationItem,
   PortfolioOverviewPayload,
   PortfolioRiskSnapshot,
+  ReconciliationException,
   ResearchQaResponse,
   ResearchNote,
   SecurityWorkspacePayload,
+  TradeJournalEntry,
   Thesis,
   Watchlist,
   WatchlistLayoutState
@@ -429,6 +434,7 @@ export const mockBrokerReconciliation: BrokerReconciliation = {
   },
   only_local: [],
   only_broker: ["SPY"],
+  open_exception_count: 2,
   quantity_mismatches: [
     {
       symbol: "AAPL",
@@ -448,6 +454,112 @@ export const mockBrokerReconciliation: BrokerReconciliation = {
     }
   ]
 };
+
+export const mockBrokerCapabilityStatus: BrokerCapabilityStatus = {
+  capabilities: {
+    provider: "mock_broker",
+    supports_positions: true,
+    supports_order_preview: true,
+    supports_order_submission: true,
+    supports_reconciliation: true,
+    requires_auth: false,
+    trading_enabled: false,
+    can_submit_orders: false,
+    restrictions: ["BROKER_TRADING_ENABLED is false."]
+  },
+  session: {
+    provider: "mock_broker",
+    connected: true,
+    auth_state: "simulated",
+    last_refreshed_at: new Date().toISOString(),
+    expires_at: new Date(Date.now() + 4 * 60 * 60 * 1000).toISOString()
+  }
+};
+
+export const mockBrokerOrderPreview: BrokerOrderPreview = {
+  provider: "mock_broker",
+  symbol: "AAPL",
+  side: "buy",
+  order_type: "market",
+  quantity: 10,
+  reference_price: 219.15,
+  estimated_notional: 2191.5,
+  estimated_fees: 1.1,
+  estimated_total_cash: 2192.6,
+  can_submit: false,
+  restrictions: ["Order submission disabled by configuration."],
+  warnings: []
+};
+
+export const mockReconciliationExceptions: ReconciliationException[] = [
+  {
+    id: "recon-ex-1",
+    symbol: "AAPL",
+    issue_type: "quantity_mismatch",
+    severity: "high",
+    status: "open",
+    local_quantity: 20,
+    broker_quantity: 42,
+    local_market_value: 4383,
+    broker_market_value: 9204.3,
+    detected_at: new Date().toISOString(),
+    last_seen_at: new Date().toISOString(),
+    resolved_at: null,
+    resolution_note: null,
+    details: { quantity_delta: 22 }
+  },
+  {
+    id: "recon-ex-2",
+    symbol: "SPY",
+    issue_type: "only_broker",
+    severity: "medium",
+    status: "open",
+    local_quantity: null,
+    broker_quantity: null,
+    local_market_value: null,
+    broker_market_value: null,
+    detected_at: new Date().toISOString(),
+    last_seen_at: new Date().toISOString(),
+    resolved_at: null,
+    resolution_note: null,
+    details: {}
+  }
+];
+
+export const mockBrokerOrderEvents: BrokerOrderEvent[] = [
+  {
+    id: "broker-event-1",
+    broker_account_id: "broker-account-fallback-1",
+    external_order_id: "mock-order-001",
+    symbol: "AAPL",
+    side: "buy",
+    order_type: "limit",
+    status: "filled",
+    quantity: 5,
+    limit_price: 215.5,
+    filled_quantity: 5,
+    avg_fill_price: 215.4,
+    submitted_at: new Date().toISOString(),
+    status_updated_at: new Date().toISOString(),
+    event_payload: { venue: "SIM" }
+  }
+];
+
+export const mockTradeJournalEntries: TradeJournalEntry[] = [
+  {
+    id: "journal-1",
+    symbol: "AAPL",
+    entry_type: "broker_fill",
+    title: "AAPL BUY filled",
+    body: "External order mock-order-001 status=filled qty=5.0000 filled=5.0000.",
+    tags: ["broker", "fill"],
+    portfolio_id: "portfolio-fallback-1",
+    transaction_id: null,
+    broker_order_event_id: "broker-event-1",
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }
+];
 
 export const mockPortfolioRiskSnapshot: PortfolioRiskSnapshot = {
   portfolio: {
@@ -494,7 +606,7 @@ export const mockResearchQaResponse: ResearchQaResponse = {
   question: "What are the key risks in AAPL?",
   symbol: "AAPL",
   answered_at: new Date().toISOString(),
-  source_model: "heuristic-retrieval-v1",
+  source_model: "hybrid-mock-hash-embed-v1",
   answer:
     "Question: What are the key risks in AAPL?\nHighest-signal context from your notes and filings:\n- Risk update: Valuation rich into CPI week.\n- AAPL 10-Q (2026-03-01): FX headwinds remain material.\nUse citations below to verify source details.",
   coverage_count: 2,
@@ -507,6 +619,9 @@ export const mockResearchQaResponse: ResearchQaResponse = {
       title: "Risk update",
       snippet: "Valuation rich into CPI week.",
       score: 1.23,
+      lexical_score: 0.8,
+      semantic_score: 0.9,
+      recency_score: 1.0,
       as_of: new Date().toISOString(),
       url: null
     },
@@ -517,6 +632,9 @@ export const mockResearchQaResponse: ResearchQaResponse = {
       title: "AAPL 10-Q (2026-03-01)",
       snippet: "FX headwinds remain material.",
       score: 1.05,
+      lexical_score: 0.6,
+      semantic_score: 0.75,
+      recency_score: 0.9,
       as_of: new Date().toISOString(),
       url: "https://www.sec.gov/"
     }

@@ -83,3 +83,5 @@ def test_ai_research_qa_with_citations(client: TestClient) -> None:
     assert payload["answer"]
     assert payload["coverage_count"] >= 1
     assert payload["citations"]
+    assert payload["source_model"].startswith("hybrid-")
+    assert "semantic_score" in payload["citations"][0]

@@ -451,6 +451,95 @@ export interface BrokerReconciliation {
   only_local: string[];
   only_broker: string[];
   quantity_mismatches: BrokerPositionDelta[];
+  open_exception_count: number;
+}
+
+export interface BrokerCapabilities {
+  provider: string;
+  supports_positions: boolean;
+  supports_order_preview: boolean;
+  supports_order_submission: boolean;
+  supports_reconciliation: boolean;
+  requires_auth: boolean;
+  trading_enabled: boolean;
+  can_submit_orders: boolean;
+  restrictions: string[];
+}
+
+export interface BrokerSessionState {
+  provider: string;
+  connected: boolean;
+  auth_state: string;
+  last_refreshed_at: string;
+  expires_at: string | null;
+}
+
+export interface BrokerCapabilityStatus {
+  capabilities: BrokerCapabilities;
+  session: BrokerSessionState;
+}
+
+export interface BrokerOrderPreview {
+  provider: string;
+  symbol: string;
+  side: string;
+  order_type: string;
+  quantity: number;
+  reference_price: number;
+  estimated_notional: number;
+  estimated_fees: number;
+  estimated_total_cash: number;
+  can_submit: boolean;
+  restrictions: string[];
+  warnings: string[];
+}
+
+export interface BrokerOrderEvent {
+  id: string;
+  broker_account_id: string | null;
+  external_order_id: string;
+  symbol: string;
+  side: string;
+  order_type: string;
+  status: string;
+  quantity: number;
+  limit_price: number | null;
+  filled_quantity: number;
+  avg_fill_price: number | null;
+  submitted_at: string;
+  status_updated_at: string | null;
+  event_payload: Record<string, unknown>;
+}
+
+export interface ReconciliationException {
+  id: string;
+  symbol: string;
+  issue_type: string;
+  severity: string;
+  status: string;
+  local_quantity: number | null;
+  broker_quantity: number | null;
+  local_market_value: number | null;
+  broker_market_value: number | null;
+  detected_at: string;
+  last_seen_at: string;
+  resolved_at: string | null;
+  resolution_note: string | null;
+  details: Record<string, unknown>;
+}
+
+export interface TradeJournalEntry {
+  id: string;
+  symbol: string | null;
+  entry_type: string;
+  title: string;
+  body: string;
+  tags: string[];
+  portfolio_id: string | null;
+  transaction_id: string | null;
+  broker_order_event_id: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface RiskTopPosition {
@@ -494,6 +583,9 @@ export interface ResearchQaCitation {
   title: string;
   snippet: string;
   score: number;
+  lexical_score?: number | null;
+  semantic_score?: number | null;
+  recency_score?: number | null;
   as_of: string;
   url: string | null;
 }

@@ -6,6 +6,7 @@ import { AlertsWorkspaceScreen } from "@/components/AlertsWorkspaceScreen";
 import { BrokerWorkspaceScreen } from "@/components/BrokerWorkspaceScreen";
 import { DashboardScreen } from "@/components/DashboardScreen";
 import { IntelSyncScreen } from "@/components/IntelSyncScreen";
+import { JournalScreen } from "@/components/JournalScreen";
 import { PortfolioScreen } from "@/components/PortfolioScreen";
 import { ResearchNotebookScreen } from "@/components/ResearchNotebookScreen";
 import { ScreenerScreen } from "@/components/ScreenerScreen";
@@ -15,6 +16,8 @@ import {
   mockAlertEvaluationSummary,
   mockAlertEvents,
   mockBrokerAccounts,
+  mockBrokerCapabilityStatus,
+  mockBrokerOrderEvents,
   mockBrokerReconciliation,
   mockDailyBriefDetail,
   mockFilings,
@@ -28,10 +31,12 @@ import {
   mockDashboard,
   mockNoteSynthesis,
   mockPortfolioOverview,
+  mockResearchQaResponse,
   mockResearchNotes,
   mockSavedScreens,
   mockScreenerResults,
   mockSecurityWorkspace,
+  mockTradeJournalEntries,
   mockTheses,
   mockWatchlists
 } from "@/lib/mock";
@@ -48,6 +53,8 @@ vi.mock("@/lib/api", () => ({
   addWatchlistItem: vi.fn(async () => ({ id: "watchlist-1", name: "Core", description: null, items: [] })),
   createManagedAlert: vi.fn(async () => mockManagedAlerts[0]),
   createPortfolioTransaction: vi.fn(async () => mockPortfolioOverview.transactions[0]),
+  createBrokerOrderEvent: vi.fn(async () => mockBrokerOrderEvents[0]),
+  createJournalEntry: vi.fn(async () => mockTradeJournalEntries[0]),
   createWatchlist: vi.fn(async () => ({ id: "watchlist-2", name: "New", description: null, items: [] })),
   createResearchNote: vi.fn(async () => mockResearchNotes[0]),
   createThesis: vi.fn(async () => mockTheses[0]),
@@ -59,6 +66,11 @@ vi.mock("@/lib/api", () => ({
   generateBrief: vi.fn(async () => mockDailyBriefDetail),
   getAlertEvents: vi.fn(async () => mockAlertEvents),
   getFilings: vi.fn(async () => mockFilings),
+  getBrokerAccounts: vi.fn(async () => mockBrokerAccounts),
+  getBrokerCapabilities: vi.fn(async () => mockBrokerCapabilityStatus),
+  getBrokerOrderEvents: vi.fn(async () => mockBrokerOrderEvents),
+  getBrokerReconciliation: vi.fn(async () => mockBrokerReconciliation),
+  getJournalEntries: vi.fn(async () => mockTradeJournalEntries),
   getManagedAlerts: vi.fn(async () => mockManagedAlerts),
   getMacroEvents: vi.fn(async () => mockMacroEvents),
   getMacroSeries: vi.fn(async () => mockMacroSeries),
@@ -66,15 +78,20 @@ vi.mock("@/lib/api", () => ({
   getNotifications: vi.fn(async () => mockNotifications),
   getPortfolioOverview: vi.fn(async () => mockPortfolioOverview),
   getResearchNotes: vi.fn(async () => mockResearchNotes),
+  getResearchQa: vi.fn(async () => mockResearchQaResponse),
   getResearchTheses: vi.fn(async () => mockTheses),
+  getReconciliationExceptions: vi.fn(async () => []),
   markNotificationRead: vi.fn(async () => undefined),
   removeWatchlistItem: vi.fn(async () => undefined),
   reorderWatchlistItems: vi.fn(async () => ({ id: "watchlist-1", name: "Core", description: null, items: [] })),
   syncFilings: vi.fn(async () => mockFilingSyncSummary),
+  syncBroker: vi.fn(async () => ({ status: "completed", fetched_accounts: 1, fetched_positions: 1 })),
   syncMacro: vi.fn(async () => mockMacroSyncSummary),
   updateResearchNote: vi.fn(async () => mockResearchNotes[0]),
   updateThesis: vi.fn(async () => mockTheses[0]),
-  updateWatchlistLayout: vi.fn(async (_, layout) => layout)
+  updateWatchlistLayout: vi.fn(async (_, layout) => layout),
+  resolveReconciliationException: vi.fn(async () => undefined),
+  previewBrokerOrder: vi.fn(async () => undefined)
 }));
 
 describe("screen smoke coverage", () => {
@@ -164,12 +181,23 @@ describe("screen smoke coverage", () => {
   it("renders broker workspace shell", () => {
     render(
       <BrokerWorkspaceScreen
+        initialCapabilities={mockBrokerCapabilityStatus}
         initialAccounts={mockBrokerAccounts}
         initialReconciliation={mockBrokerReconciliation}
+        initialExceptions={[]}
+        initialOrderEvents={mockBrokerOrderEvents}
+        initialJournalEntries={mockTradeJournalEntries}
       />
     );
 
-    expect(screen.getByText("Broker Reconciliation")).toBeInTheDocument();
+    expect(screen.getByText("Broker Execution & Reconciliation")).toBeInTheDocument();
     expect(screen.getByText("Broker Accounts")).toBeInTheDocument();
+  });
+
+  it("renders journal shell", () => {
+    render(<JournalScreen initialEntries={mockTradeJournalEntries} />);
+
+    expect(screen.getByText("Trade Journal")).toBeInTheDocument();
+    expect(screen.getByText("Recent Entries")).toBeInTheDocument();
   });
 });
