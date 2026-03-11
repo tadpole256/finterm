@@ -1,6 +1,9 @@
 import type {
   AlertEvaluationSummary,
   AlertEvent,
+  BrokerAccount,
+  BrokerReconciliation,
+  BrokerSyncSummary,
   DailyBriefDetail,
   DashboardPayload,
   FilingRecord,
@@ -8,10 +11,14 @@ import type {
   MacroEventRecord,
   MacroSeriesRecord,
   MacroSyncSummary,
+  SavedScreen,
+  ScreenerResult,
   ManagedAlert,
   NoteSynthesis,
   NotificationItem,
   PortfolioOverviewPayload,
+  PortfolioRiskSnapshot,
+  ResearchQaResponse,
   ResearchNote,
   SecurityWorkspacePayload,
   Thesis,
@@ -317,4 +324,201 @@ export const mockMacroSyncSummary: MacroSyncSummary = {
   series_upserted: 1,
   events_inserted: 1,
   as_of: new Date().toISOString()
+};
+
+export const mockScreenerResults: ScreenerResult[] = [
+  {
+    symbol: "AAPL",
+    name: "Apple Inc.",
+    sector: "Technology",
+    asset_type: "equity",
+    market_cap: 2965000000000,
+    price: 219.15,
+    change_percent: 0.57,
+    volume: 63854000
+  },
+  {
+    symbol: "MSFT",
+    name: "Microsoft Corporation",
+    sector: "Technology",
+    asset_type: "equity",
+    market_cap: 3128000000000,
+    price: 423.62,
+    change_percent: -0.66,
+    volume: 24551000
+  }
+];
+
+export const mockSavedScreens: SavedScreen[] = [
+  {
+    id: "screen-fallback-1",
+    name: "Large Cap Tech",
+    criteria: {
+      sector: "Technology",
+      price_min: 100,
+      sort_by: "market_cap",
+      sort_direction: "desc",
+      limit: 50
+    },
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }
+];
+
+export const mockBrokerAccounts: BrokerAccount[] = [
+  {
+    id: "broker-account-fallback-1",
+    provider: "mock_broker",
+    external_account_id: "paper-main",
+    account_name: "Paper Main",
+    account_type: "taxable",
+    base_currency: "USD",
+    status: "active",
+    last_synced_at: new Date().toISOString(),
+    account_meta: { connection: "simulated" },
+    position_count: 3,
+    total_market_value: 19233.7,
+    positions: [
+      {
+        symbol: "AAPL",
+        quantity: 42,
+        avg_cost: 197.25,
+        market_price: 219.15,
+        market_value: 9204.3,
+        as_of: new Date().toISOString()
+      },
+      {
+        symbol: "MSFT",
+        quantity: 14,
+        avg_cost: 409.1,
+        market_price: 423.62,
+        market_value: 5930.68,
+        as_of: new Date().toISOString()
+      },
+      {
+        symbol: "SPY",
+        quantity: 8,
+        avg_cost: 506.0,
+        market_price: 512.34,
+        market_value: 4098.72,
+        as_of: new Date().toISOString()
+      }
+    ]
+  }
+];
+
+export const mockBrokerSyncSummary: BrokerSyncSummary = {
+  run_id: "broker-sync-fallback-1",
+  provider: "mock_broker",
+  status: "completed",
+  fetched_accounts: 1,
+  fetched_positions: 3,
+  started_at: new Date().toISOString(),
+  completed_at: new Date().toISOString(),
+  message: "Broker sync completed (fallback)."
+};
+
+export const mockBrokerReconciliation: BrokerReconciliation = {
+  as_of: new Date().toISOString(),
+  summary: {
+    local_symbol_count: 2,
+    broker_symbol_count: 3,
+    only_local_count: 0,
+    only_broker_count: 1,
+    quantity_mismatch_count: 2
+  },
+  only_local: [],
+  only_broker: ["SPY"],
+  quantity_mismatches: [
+    {
+      symbol: "AAPL",
+      local_quantity: 20,
+      broker_quantity: 42,
+      quantity_delta: 22,
+      local_market_value: 4383,
+      broker_market_value: 9204.3
+    },
+    {
+      symbol: "MSFT",
+      local_quantity: 12,
+      broker_quantity: 14,
+      quantity_delta: 2,
+      local_market_value: 5083.44,
+      broker_market_value: 5930.68
+    }
+  ]
+};
+
+export const mockPortfolioRiskSnapshot: PortfolioRiskSnapshot = {
+  portfolio: {
+    id: "portfolio-fallback-1",
+    name: "Personal",
+    base_currency: "USD"
+  },
+  as_of: new Date().toISOString(),
+  net_exposure: 1,
+  gross_exposure: 1,
+  concentration_hhi: 0.52,
+  top_positions: [
+    { symbol: "MSFT", market_value: 5083.44, weight: 0.54 },
+    { symbol: "AAPL", market_value: 4383, weight: 0.46 }
+  ],
+  factor_exposures: [
+    { factor: "growth", exposure: 0.93, method: "heuristic_sector_bucket_v1" },
+    { factor: "quality", exposure: 0.45, method: "heuristic_sector_bucket_v1" },
+    { factor: "duration_risk", exposure: 0.75, method: "heuristic_sector_bucket_v1" }
+  ],
+  scenarios: [
+    {
+      name: "Risk-Off Growth Shock",
+      estimated_pnl: -1135.97,
+      estimated_return: -0.12,
+      assumptions: "Technology -12%, Consumer Discretionary -10%, all others -6%."
+    },
+    {
+      name: "Rates +100bp",
+      estimated_pnl: -757.31,
+      estimated_return: -0.08,
+      assumptions: "Technology -8%, Real Estate -10%, Financials +4%, all others -3%."
+    },
+    {
+      name: "Soft Landing Risk-On",
+      estimated_pnl: 662.65,
+      estimated_return: 0.07,
+      assumptions: "Technology +7%, Financials +5%, Healthcare +3%, all others +4%."
+    }
+  ]
+};
+
+export const mockResearchQaResponse: ResearchQaResponse = {
+  question: "What are the key risks in AAPL?",
+  symbol: "AAPL",
+  answered_at: new Date().toISOString(),
+  source_model: "heuristic-retrieval-v1",
+  answer:
+    "Question: What are the key risks in AAPL?\nHighest-signal context from your notes and filings:\n- Risk update: Valuation rich into CPI week.\n- AAPL 10-Q (2026-03-01): FX headwinds remain material.\nUse citations below to verify source details.",
+  coverage_count: 2,
+  total_candidates: 5,
+  citations: [
+    {
+      source_type: "research_note",
+      source_id: "note-fallback-1",
+      symbol: "AAPL",
+      title: "Risk update",
+      snippet: "Valuation rich into CPI week.",
+      score: 1.23,
+      as_of: new Date().toISOString(),
+      url: null
+    },
+    {
+      source_type: "filing",
+      source_id: "filing-fallback-1",
+      symbol: "AAPL",
+      title: "AAPL 10-Q (2026-03-01)",
+      snippet: "FX headwinds remain material.",
+      score: 1.05,
+      as_of: new Date().toISOString(),
+      url: "https://www.sec.gov/"
+    }
+  ]
 };

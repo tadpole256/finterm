@@ -54,6 +54,25 @@ class PortfolioTransactionView(BaseModel):
     notes: str | None
 
 
+class RiskTopPosition(BaseModel):
+    symbol: str
+    market_value: float
+    weight: float
+
+
+class RiskFactorExposure(BaseModel):
+    factor: str
+    exposure: float
+    method: str
+
+
+class ScenarioImpact(BaseModel):
+    name: str
+    estimated_pnl: float
+    estimated_return: float
+    assumptions: str
+
+
 class PortfolioOverviewResponse(BaseModel):
     portfolio: PortfolioHeader
     as_of: datetime
@@ -72,6 +91,17 @@ class PositionsResponse(BaseModel):
 class TransactionsResponse(BaseModel):
     portfolio: PortfolioHeader
     transactions: list[PortfolioTransactionView]
+
+
+class PortfolioRiskResponse(BaseModel):
+    portfolio: PortfolioHeader
+    as_of: datetime
+    net_exposure: float
+    gross_exposure: float
+    concentration_hhi: float
+    top_positions: list[RiskTopPosition]
+    factor_exposures: list[RiskFactorExposure]
+    scenarios: list[ScenarioImpact]
 
 
 class CreateTransactionRequest(BaseModel):

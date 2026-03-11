@@ -8,13 +8,15 @@ import {
   deleteResearchNote,
   deleteThesis,
   getNoteSynthesis,
+  getResearchQa,
   getResearchNotes,
   getResearchTheses,
   updateResearchNote,
   updateThesis
 } from "@/lib/api";
 import { formatDate, formatDateTime } from "@/lib/format";
-import type { NoteSynthesis, ResearchNote, Thesis } from "@/lib/types";
+import type { NoteSynthesis, ResearchNote, ResearchQaResponse, Thesis } from "@/lib/types";
+import { StateNotice } from "@/components/StateNotice";
 
 interface ResearchNotebookScreenProps {
   initialNotes: ResearchNote[];
@@ -82,6 +84,10 @@ export function ResearchNotebookScreen({
 
   const [isSavingNote, setIsSavingNote] = useState(false);
   const [isSavingThesis, setIsSavingThesis] = useState(false);
+  const [qaQuestion, setQaQuestion] = useState("What are the key risks right now?");
+  const [qaResponse, setQaResponse] = useState<ResearchQaResponse | null>(null);
+  const [isAskingQa, setIsAskingQa] = useState(false);
+  const [qaError, setQaError] = useState<string | null>(null);
 
   const symbolOptions = useMemo(() => {
     const symbols = new Set<string>(["AAPL", "MSFT", "NVDA"]);
@@ -121,6 +127,29 @@ export function ResearchNotebookScreen({
       theme: filterTheme || undefined
     });
     setSynthesis(payload);
+  }
+
+  async function askQa() {
+    const question = qaQuestion.trim();
+    if (question.length < 3) {
+      setQaError("Question must be at least 3 characters.");
+      return;
+    }
+
+    setIsAskingQa(true);
+    try {
+      const response = await getResearchQa({
+        question,
+        symbol: filterSymbol || undefined,
+        limit: 6
+      });
+      setQaResponse(response);
+      setQaError(null);
+    } catch {
+      setQaError("Unable to answer question from current note/filing corpus.");
+    } finally {
+      setIsAskingQa(false);
+    }
   }
 
   async function saveNote() {
@@ -568,6 +597,65 @@ export function ResearchNotebookScreen({
                   ))}
                 </ul>
               </div>
+            </div>
+          </section>
+
+          <section className="panel">
+            <div className="panel-header">
+              <h3 className="text-sm font-semibold text-textPrimary">Ask Notes + Filings</h3>
+              <p className="text-xs text-textSecondary">
+                Citation-backed retrieval over your research corpus.
+              </p>
+            </div>
+            <div className="panel-body space-y-3">
+              <textarea
+                value={qaQuestion}
+                onChange={(event) => setQaQuestion(event.target.value)}
+                rows={3}
+                placeholder="Ask a question about current thesis, risk, or filing changes..."
+                className="w-full rounded-md border border-border bg-panelMuted px-3 py-2 text-sm text-textPrimary"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  void askQa();
+                }}
+                className="rounded-md border border-border px-3 py-2 text-sm text-textSecondary hover:text-textPrimary"
+                disabled={isAskingQa}
+              >
+                {isAskingQa ? "Querying..." : "Ask"}
+              </button>
+
+              {qaError ? <StateNotice tone="error" title={qaError} /> : null}
+
+              {qaResponse ? (
+                <div className="space-y-3 rounded-md border border-border px-3 py-3">
+                  <p className="text-xs text-textSecondary">
+                    {qaResponse.source_model} · {qaResponse.coverage_count} citations
+                  </p>
+                  <pre className="whitespace-pre-wrap text-sm text-textPrimary">{qaResponse.answer}</pre>
+                  <div className="space-y-2">
+                    {qaResponse.citations.map((citation) => (
+                      <article key={citation.source_id} className="rounded-md border border-border px-3 py-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-xs text-textPrimary">{citation.title}</p>
+                          <p className="text-xs text-textSecondary">{citation.source_type}</p>
+                        </div>
+                        <p className="mt-1 text-xs text-textSecondary">{citation.snippet}</p>
+                        <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-textSecondary">
+                          <span>Score {citation.score.toFixed(2)}</span>
+                          <span>{formatDate(citation.as_of)}</span>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <StateNotice
+                  title="No QA response yet."
+                  detail="Ask a question to retrieve the highest-signal notes and filings with citations."
+                />
+              )}
             </div>
           </section>
         </div>

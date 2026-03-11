@@ -318,6 +318,73 @@ class Notification(Base, TimestampMixin):
     read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
+class BrokerAccount(Base, TimestampMixin):
+    __tablename__ = "broker_accounts"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "provider",
+            "external_account_id",
+            name="uq_broker_account_user_provider_external",
+        ),
+        Index("ix_broker_accounts_user_provider", "user_id", "provider"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), nullable=False)
+    provider: Mapped[str] = mapped_column(String(32), nullable=False)
+    external_account_id: Mapped[str] = mapped_column(String(120), nullable=False)
+    account_name: Mapped[str] = mapped_column(String(120), nullable=False)
+    account_type: Mapped[str] = mapped_column(String(32), nullable=False, default="taxable")
+    base_currency: Mapped[str] = mapped_column(String(8), nullable=False, default="USD")
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="active")
+    last_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    account_meta: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+
+    snapshots: Mapped[list[BrokerPositionSnapshot]] = relationship(
+        back_populates="broker_account", cascade="all, delete-orphan"
+    )
+
+
+class BrokerPositionSnapshot(Base, TimestampMixin):
+    __tablename__ = "broker_position_snapshots"
+    __table_args__ = (
+        Index("ix_broker_position_snapshots_account_as_of", "broker_account_id", "as_of"),
+        Index("ix_broker_position_snapshots_symbol_as_of", "symbol", "as_of"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    broker_account_id: Mapped[str] = mapped_column(
+        String(36), ForeignKey("broker_accounts.id", ondelete="CASCADE"), nullable=False
+    )
+    instrument_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("instruments.id"), nullable=True)
+    symbol: Mapped[str] = mapped_column(String(24), nullable=False)
+    quantity: Mapped[Decimal] = mapped_column(Numeric(18, 6), nullable=False)
+    avg_cost: Mapped[Decimal | None] = mapped_column(Numeric(18, 6), nullable=True)
+    market_price: Mapped[Decimal | None] = mapped_column(Numeric(18, 6), nullable=True)
+    market_value: Mapped[Decimal | None] = mapped_column(Numeric(20, 2), nullable=True)
+    as_of: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    source_provider: Mapped[str] = mapped_column(String(32), nullable=False, default="mock_broker")
+
+    broker_account: Mapped[BrokerAccount] = relationship(back_populates="snapshots")
+
+
+class BrokerSyncRun(Base, TimestampMixin):
+    __tablename__ = "broker_sync_runs"
+    __table_args__ = (Index("ix_broker_sync_runs_user_provider_started", "user_id", "provider", "started_at"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid4()))
+    user_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), nullable=False)
+    provider: Mapped[str] = mapped_column(String(32), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="completed")
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=func.now())
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    fetched_accounts: Mapped[int] = mapped_column(nullable=False, default=0)
+    fetched_positions: Mapped[int] = mapped_column(nullable=False, default=0)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    details: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+
+
 class SavedScreen(Base, TimestampMixin):
     __tablename__ = "saved_screens"
 

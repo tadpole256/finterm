@@ -9,6 +9,7 @@ import {
   reorderWatchlistItems,
   updateWatchlistLayout
 } from "@/lib/api";
+import { StateNotice } from "@/components/StateNotice";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import type { Watchlist, WatchlistLayoutState } from "@/lib/types";
 
@@ -27,6 +28,9 @@ export function WatchlistsScreen({
   const [layout, setLayout] = useState(initialLayout);
   const [newWatchlistName, setNewWatchlistName] = useState("");
   const [symbolInput, setSymbolInput] = useState("");
+  const [isBusy, setIsBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
 
   const tags = useMemo(
     () =>
@@ -43,39 +47,73 @@ export function WatchlistsScreen({
 
   async function persistLayout(next: WatchlistLayoutState) {
     setLayout(next);
-    await updateWatchlistLayout(USER_ID, next);
+    try {
+      await updateWatchlistLayout(USER_ID, next);
+      setError(null);
+    } catch {
+      setError("Unable to persist watchlist layout preferences.");
+    }
   }
 
   async function onCreateWatchlist() {
     if (!newWatchlistName.trim()) {
       return;
     }
-    const created = await createWatchlist(newWatchlistName.trim(), null);
-    setWatchlists((prev) => [...prev, created]);
-    setNewWatchlistName("");
+    setIsBusy(true);
+    try {
+      const created = await createWatchlist(newWatchlistName.trim(), null);
+      setWatchlists((prev) => [...prev, created]);
+      setNewWatchlistName("");
+      setError(null);
+      setMessage(`Created watchlist "${created.name}".`);
+    } catch {
+      setError("Unable to create watchlist.");
+    } finally {
+      setIsBusy(false);
+    }
   }
 
   async function onAddSymbol(watchlistId: string) {
     if (!symbolInput.trim()) {
       return;
     }
-    const updated = await addWatchlistItem(watchlistId, symbolInput.trim().toUpperCase(), []);
-    setWatchlists((prev) => prev.map((watchlist) => (watchlist.id === watchlistId ? updated : watchlist)));
-    setSymbolInput("");
+    setIsBusy(true);
+    try {
+      const updated = await addWatchlistItem(watchlistId, symbolInput.trim().toUpperCase(), []);
+      setWatchlists((prev) =>
+        prev.map((watchlist) => (watchlist.id === watchlistId ? updated : watchlist))
+      );
+      setSymbolInput("");
+      setError(null);
+      setMessage("Symbol added.");
+    } catch {
+      setError("Unable to add symbol to watchlist.");
+    } finally {
+      setIsBusy(false);
+    }
   }
 
   async function onRemoveSymbol(watchlistId: string, itemId: string) {
-    await removeWatchlistItem(watchlistId, itemId);
-    setWatchlists((prev) =>
-      prev.map((watchlist) =>
-        watchlist.id === watchlistId
-          ? {
-              ...watchlist,
-              items: watchlist.items.filter((item) => item.id !== itemId)
-            }
-          : watchlist
-      )
-    );
+    setIsBusy(true);
+    try {
+      await removeWatchlistItem(watchlistId, itemId);
+      setWatchlists((prev) =>
+        prev.map((watchlist) =>
+          watchlist.id === watchlistId
+            ? {
+                ...watchlist,
+                items: watchlist.items.filter((item) => item.id !== itemId)
+              }
+            : watchlist
+        )
+      );
+      setError(null);
+      setMessage("Symbol removed.");
+    } catch {
+      setError("Unable to remove symbol from watchlist.");
+    } finally {
+      setIsBusy(false);
+    }
   }
 
   async function onMove(watchlistId: string, index: number, direction: -1 | 1) {
@@ -93,12 +131,20 @@ export function WatchlistsScreen({
     const [moved] = reordered.splice(index, 1);
     reordered.splice(nextIndex, 0, moved);
 
-    const updated = await reorderWatchlistItems(
-      watchlistId,
-      reordered.map((item) => item.id)
-    );
-
-    setWatchlists((prev) => prev.map((item) => (item.id === watchlistId ? updated : item)));
+    setIsBusy(true);
+    try {
+      const updated = await reorderWatchlistItems(
+        watchlistId,
+        reordered.map((item) => item.id)
+      );
+      setWatchlists((prev) => prev.map((item) => (item.id === watchlistId ? updated : item)));
+      setError(null);
+      setMessage("Watchlist order updated.");
+    } catch {
+      setError("Unable to reorder watchlist items.");
+    } finally {
+      setIsBusy(false);
+    }
   }
 
   return (
@@ -189,11 +235,22 @@ export function WatchlistsScreen({
               void onCreateWatchlist();
             }}
             className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-[#06121e]"
+            disabled={isBusy}
           >
             Create
           </button>
         </div>
       </div>
+
+      {error ? <StateNotice tone="error" title={error} /> : null}
+      {message ? <StateNotice title={message} /> : null}
+
+      {watchlists.length === 0 ? (
+        <StateNotice
+          title="No watchlists created yet."
+          detail="Create one to start tracking symbols and security drill-through."
+        />
+      ) : null}
 
       {watchlists.map((watchlist) => {
         const filtered = watchlist.items
@@ -229,6 +286,7 @@ export function WatchlistsScreen({
                   onClick={() => {
                     void onAddSymbol(watchlist.id);
                   }}
+                  disabled={isBusy}
                 >
                   Add
                 </button>
@@ -266,6 +324,7 @@ export function WatchlistsScreen({
                             onClick={() => {
                               void onMove(watchlist.id, index, -1);
                             }}
+                            disabled={isBusy}
                           >
                             ↑
                           </button>
@@ -275,6 +334,7 @@ export function WatchlistsScreen({
                             onClick={() => {
                               void onMove(watchlist.id, index, 1);
                             }}
+                            disabled={isBusy}
                           >
                             ↓
                           </button>
@@ -284,6 +344,7 @@ export function WatchlistsScreen({
                             onClick={() => {
                               void onRemoveSymbol(watchlist.id, item.id);
                             }}
+                            disabled={isBusy}
                           >
                             Remove
                           </button>

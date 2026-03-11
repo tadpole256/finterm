@@ -1,4 +1,5 @@
 import { formatDateTime } from "@/lib/format";
+import { StateNotice } from "@/components/StateNotice";
 import type { MacroEvent } from "@/lib/types";
 
 interface MacroEventsPanelProps {
@@ -13,7 +14,12 @@ const impactClass: Record<MacroEvent["impact"], string> = {
 
 export function MacroEventsPanel({ events }: MacroEventsPanelProps) {
   if (events.length === 0) {
-    return <p className="text-sm text-textSecondary">No macro events scheduled.</p>;
+    return (
+      <StateNotice
+        title="No macro events scheduled."
+        detail="Sync macro series/events in Intel when providers are available."
+      />
+    );
   }
 
   return (

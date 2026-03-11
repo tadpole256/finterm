@@ -72,3 +72,25 @@ class NoteSynthesisResponse(BaseModel):
     open_questions: list[str]
     risks: list[str]
     next_watch: list[str]
+
+
+class ResearchQaCitation(BaseModel):
+    source_type: str
+    source_id: str
+    symbol: str | None
+    title: str
+    snippet: str
+    score: float
+    as_of: datetime
+    url: str | None
+
+
+class ResearchQaResponse(BaseModel):
+    question: str
+    symbol: str | None
+    answered_at: datetime
+    source_model: str
+    answer: str
+    citations: list[ResearchQaCitation]
+    coverage_count: int
+    total_candidates: int

@@ -8,7 +8,9 @@
 - Phase 4: **Completed (MVP)**
 - Phase 5: **Completed (MVP)**
 - Phase 6: **Completed (MVP)**
-- Phase 7+: **Not started**
+- Phase 7: **Completed (MVP)**
+- Phase 8: **Completed (MVP)**
+- Phase 9+: **Not started**
 
 ## Phase Plan
 
@@ -89,11 +91,45 @@
 - Dashboard macro panel now reads DB-backed macro events (provider fallback retained).
 - Added Intel sync workspace (`/intel`) for manual filings/macro sync and visibility.
 
-### Phase 7: Screener & Polish (Pending)
+### Phase 7: Screener & Polish (Completed - MVP)
 
-- Saved screens UI
-- richer filtering UX
-- keyboard navigation and interaction polish
+- Screener workspace (`/screener`) with richer filtering:
+  - symbol query, asset type, sector, watchlist, tag
+  - price, change %, market cap, volume ranges
+  - sort + direction + limit controls
+- Saved screens persistence and workflows:
+  - list/create/update/delete/run saved screens
+  - backend criteria parsing and re-run execution
+- Keyboard interaction polish:
+  - `/` focus symbol input
+  - `Cmd/Ctrl+Enter` run screener
+  - `Cmd/Ctrl+S` save current screen
+- Loading/empty/error consistency pass:
+  - global route loading skeleton
+  - app-level error boundary (`app/error.tsx`)
+  - shared `StateNotice` usage across major dashboard/workspace panels
+- Phase 7 route and UI smoke coverage updates:
+  - `test_screening_routes.py` for saved screen and extended filter APIs
+  - frontend smoke coverage includes screener screen render
+
+### Phase 8: Broker + Risk + Retrieval (Completed - MVP)
+
+- Broker integration foundation (read-only):
+  - broker provider abstraction (`BrokerProvider`) + mock broker adapter
+  - broker sync persistence (`broker_accounts`, `broker_position_snapshots`, `broker_sync_runs`)
+  - reconciliation endpoint against local portfolio holdings
+- Portfolio risk snapshot:
+  - `GET /api/v1/portfolio/risk`
+  - concentration (HHI), top-position weights, factor bucket heuristics
+  - scenario stress stubs with explicit assumptions and estimated impact
+- Retrieval augmentation with citations:
+  - `GET /api/v1/ai/research-qa`
+  - retrieves from notes + filings corpus and returns ranked citation traces
+- New UI surfaces:
+  - `/broker` reconciliation workspace
+  - portfolio risk panel in `/portfolio`
+  - citation-backed QA panel in `/research`
+- Added backend/frontend test coverage for Phase 8 flows.
 
 ## Risks and Mitigations
 

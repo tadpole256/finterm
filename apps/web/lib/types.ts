@@ -356,3 +356,155 @@ export interface MacroSyncSummary {
   events_inserted: number;
   as_of: string;
 }
+
+export interface ScreenerResult {
+  symbol: string;
+  name: string;
+  sector: string | null;
+  asset_type: string;
+  market_cap: number | null;
+  price: number;
+  change_percent: number;
+  volume: number | null;
+}
+
+export interface ScreenerFilters {
+  price_min?: number;
+  price_max?: number;
+  market_cap_min?: number;
+  market_cap_max?: number;
+  change_percent_min?: number;
+  change_percent_max?: number;
+  volume_min?: number;
+  volume_max?: number;
+  sector?: string;
+  asset_type?: string;
+  symbol_query?: string;
+  watchlist_id?: string;
+  tag?: string;
+  sort_by?: "symbol" | "name" | "price" | "change_percent" | "market_cap" | "volume";
+  sort_direction?: "asc" | "desc";
+  limit?: number;
+}
+
+export interface SavedScreen {
+  id: string;
+  name: string;
+  criteria: Record<string, unknown>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BrokerPosition {
+  symbol: string;
+  quantity: number;
+  avg_cost: number | null;
+  market_price: number | null;
+  market_value: number | null;
+  as_of: string;
+}
+
+export interface BrokerAccount {
+  id: string;
+  provider: string;
+  external_account_id: string;
+  account_name: string;
+  account_type: string;
+  base_currency: string;
+  status: string;
+  last_synced_at: string | null;
+  account_meta: Record<string, unknown>;
+  position_count: number;
+  total_market_value: number;
+  positions: BrokerPosition[];
+}
+
+export interface BrokerSyncSummary {
+  run_id: string;
+  provider: string;
+  status: string;
+  fetched_accounts: number;
+  fetched_positions: number;
+  started_at: string;
+  completed_at: string | null;
+  message: string;
+}
+
+export interface BrokerPositionDelta {
+  symbol: string;
+  local_quantity: number;
+  broker_quantity: number;
+  quantity_delta: number;
+  local_market_value: number | null;
+  broker_market_value: number | null;
+}
+
+export interface BrokerReconciliation {
+  as_of: string;
+  summary: {
+    local_symbol_count: number;
+    broker_symbol_count: number;
+    only_local_count: number;
+    only_broker_count: number;
+    quantity_mismatch_count: number;
+  };
+  only_local: string[];
+  only_broker: string[];
+  quantity_mismatches: BrokerPositionDelta[];
+}
+
+export interface RiskTopPosition {
+  symbol: string;
+  market_value: number;
+  weight: number;
+}
+
+export interface RiskFactorExposure {
+  factor: string;
+  exposure: number;
+  method: string;
+}
+
+export interface RiskScenarioImpact {
+  name: string;
+  estimated_pnl: number;
+  estimated_return: number;
+  assumptions: string;
+}
+
+export interface PortfolioRiskSnapshot {
+  portfolio: {
+    id: string;
+    name: string;
+    base_currency: string;
+  };
+  as_of: string;
+  net_exposure: number;
+  gross_exposure: number;
+  concentration_hhi: number;
+  top_positions: RiskTopPosition[];
+  factor_exposures: RiskFactorExposure[];
+  scenarios: RiskScenarioImpact[];
+}
+
+export interface ResearchQaCitation {
+  source_type: "research_note" | "filing" | string;
+  source_id: string;
+  symbol: string | null;
+  title: string;
+  snippet: string;
+  score: number;
+  as_of: string;
+  url: string | null;
+}
+
+export interface ResearchQaResponse {
+  question: string;
+  symbol: string | null;
+  answered_at: string;
+  source_model: string;
+  answer: string;
+  citations: ResearchQaCitation[];
+  coverage_count: number;
+  total_candidates: number;
+}

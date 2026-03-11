@@ -1,4 +1,5 @@
 import { formatCurrency, formatPercent } from "@/lib/format";
+import { StateNotice } from "@/components/StateNotice";
 import type { MarketQuote } from "@/lib/types";
 
 interface MarketSnapshotStripProps {
@@ -6,6 +7,16 @@ interface MarketSnapshotStripProps {
 }
 
 export function MarketSnapshotStrip({ quotes }: MarketSnapshotStripProps) {
+  if (quotes.length === 0) {
+    return (
+      <StateNotice
+        tone="warning"
+        title="No market snapshot data available."
+        detail="Check provider configuration and seed data freshness."
+      />
+    );
+  }
+
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {quotes.map((quote) => (

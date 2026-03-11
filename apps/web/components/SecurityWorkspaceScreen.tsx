@@ -5,6 +5,7 @@ import { useState } from "react";
 import { FreshnessPill } from "@/components/FreshnessPill";
 import { Panel } from "@/components/Panel";
 import { SecurityChart } from "@/components/SecurityChart";
+import { StateNotice } from "@/components/StateNotice";
 import { getSecurityWorkspace } from "@/lib/api";
 import { formatCompact, formatCurrency, formatDate, formatPercent } from "@/lib/format";
 import type { SecurityWorkspacePayload } from "@/lib/types";
@@ -24,6 +25,7 @@ export function SecurityWorkspaceScreen({ data }: SecurityWorkspaceScreenProps) 
   const [timeframe, setTimeframe] = useState<(typeof timeframes)[number]["value"]>("6M");
   const [workspaceData, setWorkspaceData] = useState(data);
   const [isLoadingTimeframe, setIsLoadingTimeframe] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [showSma20, setShowSma20] = useState(true);
   const [showSma50, setShowSma50] = useState(true);
   const [showEma20, setShowEma20] = useState(false);
@@ -33,9 +35,15 @@ export function SecurityWorkspaceScreen({ data }: SecurityWorkspaceScreenProps) 
   async function onSelectTimeframe(next: (typeof timeframes)[number]["value"]) {
     setTimeframe(next);
     setIsLoadingTimeframe(true);
-    const payload = await getSecurityWorkspace(workspaceData.instrument.symbol, next);
-    setWorkspaceData(payload);
-    setIsLoadingTimeframe(false);
+    try {
+      const payload = await getSecurityWorkspace(workspaceData.instrument.symbol, next);
+      setWorkspaceData(payload);
+      setFetchError(null);
+    } catch {
+      setFetchError("Unable to refresh security workspace data for the selected timeframe.");
+    } finally {
+      setIsLoadingTimeframe(false);
+    }
   }
 
   return (
@@ -80,6 +88,10 @@ export function SecurityWorkspaceScreen({ data }: SecurityWorkspaceScreenProps) 
         </div>
       </header>
 
+      {fetchError ? (
+        <StateNotice tone="error" title={fetchError} detail="Displaying the most recent loaded payload." />
+      ) : null}
+
       <Panel title="Price + Technicals" subtitle="Candles, volume, and overlays">
         <div className="mb-3 flex flex-wrap items-center gap-2">
           {timeframes.map((item) => (
@@ -123,38 +135,56 @@ export function SecurityWorkspaceScreen({ data }: SecurityWorkspaceScreenProps) 
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Panel title="Recent Filings" subtitle="Most recent document updates">
-          <ul className="space-y-2">
-            {workspaceData.filings.map((filing) => (
-              <li key={filing.id} className="rounded-md border border-border px-3 py-2">
-                <p className="text-sm font-medium text-textPrimary">{filing.form_type}</p>
-                <p className="mt-1 text-xs text-textSecondary">{formatDate(filing.filed_at)}</p>
-                <p className="mt-1 text-xs text-textSecondary">{filing.summary ?? "No summary yet"}</p>
-              </li>
-            ))}
-          </ul>
+          {workspaceData.filings.length === 0 ? (
+            <StateNotice
+              title="No filings in the current workspace payload."
+              detail="Run filings sync from Intel to ingest recent records."
+            />
+          ) : (
+            <ul className="space-y-2">
+              {workspaceData.filings.map((filing) => (
+                <li key={filing.id} className="rounded-md border border-border px-3 py-2">
+                  <p className="text-sm font-medium text-textPrimary">{filing.form_type}</p>
+                  <p className="mt-1 text-xs text-textSecondary">{formatDate(filing.filed_at)}</p>
+                  <p className="mt-1 text-xs text-textSecondary">{filing.summary ?? "No summary yet"}</p>
+                </li>
+              ))}
+            </ul>
+          )}
         </Panel>
 
         <Panel title="Recent Notes" subtitle="Linked research context">
-          <ul className="space-y-2">
-            {workspaceData.notes.map((note) => (
-              <li key={note.id} className="rounded-md border border-border px-3 py-2">
-                <p className="text-sm text-textPrimary">{note.title}</p>
-                <p className="mt-1 text-xs text-textSecondary">{note.note_type}</p>
-                <p className="mt-1 text-xs text-textSecondary">Updated {formatDate(note.updated_at)}</p>
-              </li>
-            ))}
-          </ul>
+          {workspaceData.notes.length === 0 ? (
+            <StateNotice title="No linked notes yet." detail="Create notes in Research and link them to this symbol." />
+          ) : (
+            <ul className="space-y-2">
+              {workspaceData.notes.map((note) => (
+                <li key={note.id} className="rounded-md border border-border px-3 py-2">
+                  <p className="text-sm text-textPrimary">{note.title}</p>
+                  <p className="mt-1 text-xs text-textSecondary">{note.note_type}</p>
+                  <p className="mt-1 text-xs text-textSecondary">Updated {formatDate(note.updated_at)}</p>
+                </li>
+              ))}
+            </ul>
+          )}
         </Panel>
 
         <Panel title="Catalysts + What Changed" subtitle="Event timeline and AI delta placeholder">
-          <ul className="space-y-2">
-            {workspaceData.catalysts.map((event) => (
-              <li key={event.id} className="rounded-md border border-border px-3 py-2">
-                <p className="text-sm text-textPrimary">{event.title}</p>
-                <p className="mt-1 text-xs text-textSecondary">{formatDate(event.event_date)} · {event.status}</p>
-              </li>
-            ))}
-          </ul>
+          {workspaceData.catalysts.length === 0 ? (
+            <StateNotice
+              title="No catalysts tracked for this symbol."
+              detail="Catalyst support is seeded in Phase 2 and expanded in later phases."
+            />
+          ) : (
+            <ul className="space-y-2">
+              {workspaceData.catalysts.map((event) => (
+                <li key={event.id} className="rounded-md border border-border px-3 py-2">
+                  <p className="text-sm text-textPrimary">{event.title}</p>
+                  <p className="mt-1 text-xs text-textSecondary">{formatDate(event.event_date)} · {event.status}</p>
+                </li>
+              ))}
+            </ul>
+          )}
           <div className="mt-4 rounded-md border border-accent/30 bg-accent/5 p-3 text-sm text-textSecondary">
             {workspaceData.what_changed}
           </div>

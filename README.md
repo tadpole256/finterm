@@ -9,7 +9,7 @@ Finterm is a personal market intelligence terminal for one advanced user. It foc
 - AI used for summarization and triage, not deterministic prediction claims.
 - Honest UI signals for stale/delayed/degraded data.
 
-## Current Scope (Implemented: Phase 1 + Phase 2 + Phase 3 + Phase 4 + Phase 5 + Phase 6 MVP)
+## Current Scope (Implemented: Phase 1 + Phase 2 + Phase 3 + Phase 4 + Phase 5 + Phase 6 + Phase 7 + Phase 8 MVP)
 
 - Foundation monorepo (`Next.js` frontend, `FastAPI` backend, worker scaffold).
 - Full baseline schema + Alembic migration for required core entities.
@@ -21,6 +21,10 @@ Finterm is a personal market intelligence terminal for one advanced user. It foc
 - Portfolio workspace (`/portfolio`) with holdings, transactions, P&L summary, sector exposure, and links to research/watchlists.
 - Alerts workspace (`/alerts`) with alert CRUD, manual evaluation, event history, notification read-state, and daily brief controls.
 - Intel workspace (`/intel`) with filings/macro sync controls and visibility into ingested outputs.
+- Screener workspace (`/screener`) with richer filters, saved screens, keyboard shortcuts, and result drill-through to security workspace.
+- Broker workspace (`/broker`) with read-only broker sync snapshots and reconciliation against local portfolio holdings.
+- Portfolio risk snapshot (`/portfolio`) with concentration, factor bucket heuristics, and scenario stress stubs.
+- Research QA retrieval (`/research`) over notes + filings with explicit citation traces.
 - API routes for market, watchlists, bars, instrument search/detail, workspace security payload, layout persistence, basic screening, and research.
 - Portfolio APIs for overview, positions, transaction history, create transaction, and delete transaction.
 - Alerts + notifications + brief APIs with worker execution loop for scheduled evaluations/generation.
@@ -121,11 +125,19 @@ Optional worker env knobs:
 - `GET /api/v1/workspaces/security/{symbol}`
 - `GET|PUT /api/v1/workspaces/layout/{workspace}`
 - `GET /api/v1/screening/run`
+- `GET|POST /api/v1/screening/screens`
+- `PATCH|DELETE /api/v1/screening/screens/{screen_id}`
+- `POST /api/v1/screening/screens/{screen_id}/run`
+- `GET /api/v1/portfolio/risk`
+- `GET /api/v1/broker/accounts`
+- `POST /api/v1/broker/sync`
+- `GET /api/v1/broker/reconcile`
 - `GET|POST|PATCH|DELETE /api/v1/research/notes...`
 - `GET|POST|PATCH|DELETE /api/v1/research/theses...`
 - `GET /api/v1/research/themes`
 - `GET /api/v1/research/synthesis`
 - `GET /api/v1/ai/note-synthesis`
+- `GET /api/v1/ai/research-qa`
 - `GET /api/v1/portfolio/overview`
 - `GET /api/v1/portfolio/positions`
 - `GET /api/v1/portfolio/transactions`

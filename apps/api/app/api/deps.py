@@ -3,6 +3,7 @@ from functools import lru_cache
 from fastapi import Header
 
 from app.core.config import get_settings
+from app.services.broker_provider import BrokerProvider, broker_provider_from_name
 from app.services.cache import CacheService
 from app.services.filings_provider import FilingsProvider, filings_provider_from_name
 from app.services.macro_provider import MacroProvider, macro_provider_from_name
@@ -30,6 +31,12 @@ def get_filings_provider() -> FilingsProvider:
 def get_macro_provider() -> MacroProvider:
     settings = get_settings()
     return macro_provider_from_name(settings.macro_provider)
+
+
+@lru_cache(maxsize=1)
+def get_broker_provider() -> BrokerProvider:
+    settings = get_settings()
+    return broker_provider_from_name(settings.broker_provider)
 
 
 def get_user_id(x_user_id: str | None = Header(default=None)) -> str:

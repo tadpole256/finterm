@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { formatCurrency, formatPercent } from "@/lib/format";
+import { StateNotice } from "@/components/StateNotice";
 import type { Watchlist } from "@/lib/types";
 
 interface WatchlistTableProps {
@@ -9,7 +10,12 @@ interface WatchlistTableProps {
 
 export function WatchlistTable({ watchlists }: WatchlistTableProps) {
   if (watchlists.length === 0) {
-    return <p className="text-sm text-textSecondary">No watchlists configured yet.</p>;
+    return (
+      <StateNotice
+        title="No watchlists configured yet."
+        detail="Create watchlists to track symbols and surface them on the dashboard."
+      />
+    );
   }
 
   return (

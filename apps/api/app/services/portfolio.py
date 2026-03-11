@@ -87,6 +87,79 @@ class PortfolioService:
             "transactions": self._serialize_transactions(portfolio),
         }
 
+    def risk_snapshot(self, user_id: str, portfolio_id: str | None = None) -> dict[str, object]:
+        portfolio = self._portfolio_for_user(user_id, portfolio_id)
+        holdings, as_of, _ = self._positions_for_portfolio(user_id, portfolio)
+
+        gross_market_value = sum(max(self._value_as_float(item.get("market_value")), 0.0) for item in holdings)
+        if gross_market_value <= 0:
+            return {
+                "portfolio": self._serialize_portfolio(portfolio),
+                "as_of": as_of,
+                "net_exposure": 0.0,
+                "gross_exposure": 0.0,
+                "concentration_hhi": 0.0,
+                "top_positions": [],
+                "factor_exposures": [],
+                "scenarios": self._scenario_impacts([], 0.0),
+            }
+
+        top_positions_rows = sorted(
+            holdings,
+            key=lambda item: self._value_as_float(item.get("market_value")),
+            reverse=True,
+        )[:5]
+        top_positions = [
+            {
+                "symbol": str(item.get("symbol")),
+                "market_value": round(self._value_as_float(item.get("market_value")), 2),
+                "weight": round(self._value_as_float(item.get("market_value")) / gross_market_value, 4),
+            }
+            for item in top_positions_rows
+        ]
+
+        weights = [
+            self._value_as_float(item.get("market_value")) / gross_market_value
+            for item in holdings
+            if self._value_as_float(item.get("market_value")) > 0
+        ]
+        concentration_hhi = round(sum(weight * weight for weight in weights), 4)
+
+        factor_totals: dict[str, float] = defaultdict(float)
+        for item in holdings:
+            weight = self._value_as_float(item.get("market_value")) / gross_market_value
+            if weight <= 0:
+                continue
+            for factor, score in self._factor_scores_for_holding(item).items():
+                factor_totals[factor] += weight * score
+
+        factor_exposures = [
+            {
+                "factor": factor,
+                "exposure": round(value, 4),
+                "method": "heuristic_sector_bucket_v1",
+            }
+            for factor, value in sorted(
+                factor_totals.items(), key=lambda pair: abs(pair[1]), reverse=True
+            )
+        ]
+
+        long_exposure = sum(max(self._value_as_float(item.get("market_value")), 0.0) for item in holdings)
+        short_exposure = sum(abs(min(self._value_as_float(item.get("market_value")), 0.0)) for item in holdings)
+        net_exposure_ratio = (long_exposure - short_exposure) / gross_market_value if gross_market_value > 0 else 0.0
+        gross_exposure_ratio = (long_exposure + short_exposure) / gross_market_value if gross_market_value > 0 else 0.0
+
+        return {
+            "portfolio": self._serialize_portfolio(portfolio),
+            "as_of": as_of,
+            "net_exposure": round(net_exposure_ratio, 4),
+            "gross_exposure": round(gross_exposure_ratio, 4),
+            "concentration_hhi": concentration_hhi,
+            "top_positions": top_positions,
+            "factor_exposures": factor_exposures[:8],
+            "scenarios": self._scenario_impacts(holdings, gross_market_value),
+        }
+
     def create_transaction(self, user_id: str, payload: CreateTransactionRequest) -> dict[str, object]:
         portfolio = self._portfolio_for_user(user_id, payload.portfolio_id)
         instrument = self.db.execute(
@@ -352,3 +425,87 @@ class PortfolioService:
         if isinstance(value, str):
             return value
         return None
+
+    def _factor_scores_for_holding(self, holding: dict[str, object]) -> dict[str, float]:
+        symbol = str(holding.get("symbol") or "").upper()
+        sector = str(holding.get("sector") or "").lower()
+
+        if symbol in {"SPY", "QQQ", "IWM", "DIA"}:
+            return {"market_beta": 1.0, "growth": 0.4}
+
+        if "technology" in sector:
+            return {"growth": 0.95, "quality": 0.45, "duration_risk": 0.75}
+        if "financial" in sector:
+            return {"value": 0.75, "rate_sensitivity": 0.8}
+        if "health" in sector:
+            return {"defensive": 0.65, "quality": 0.5}
+        if "energy" in sector or "material" in sector:
+            return {"inflation_beta": 0.7, "cyclicality": 0.65}
+        if "utility" in sector or "consumer staple" in sector:
+            return {"defensive": 0.85}
+
+        return {"market_beta": 0.6}
+
+    def _scenario_impacts(
+        self,
+        holdings: list[dict[str, object]],
+        gross_market_value: float,
+    ) -> list[dict[str, object]]:
+        scenarios: list[tuple[str, str, float, dict[str, float]]] = [
+            (
+                "Risk-Off Growth Shock",
+                "Technology -12%, Consumer Discretionary -10%, all others -6%.",
+                -0.06,
+                {
+                    "technology": -0.12,
+                    "consumer discretionary": -0.10,
+                },
+            ),
+            (
+                "Rates +100bp",
+                "Technology -8%, Real Estate -10%, Financials +4%, all others -3%.",
+                -0.03,
+                {
+                    "technology": -0.08,
+                    "real estate": -0.10,
+                    "financial": 0.04,
+                },
+            ),
+            (
+                "Soft Landing Risk-On",
+                "Technology +7%, Financials +5%, Healthcare +3%, all others +4%.",
+                0.04,
+                {
+                    "technology": 0.07,
+                    "financial": 0.05,
+                    "health": 0.03,
+                },
+            ),
+        ]
+
+        rows: list[dict[str, object]] = []
+        for name, assumptions, default_shock, shocks in scenarios:
+            estimated_pnl = 0.0
+            for holding in holdings:
+                market_value = self._value_as_float(holding.get("market_value"))
+                if market_value == 0:
+                    continue
+                sector = str(holding.get("sector") or "").lower()
+                shock = default_shock
+                for sector_term, sector_shock in shocks.items():
+                    if sector_term in sector:
+                        shock = sector_shock
+                        break
+                estimated_pnl += market_value * shock
+
+            estimated_return = estimated_pnl / gross_market_value if gross_market_value > 0 else 0.0
+            rows.append(
+                {
+                    "name": name,
+                    "estimated_pnl": round(estimated_pnl, 2),
+                    "estimated_return": round(estimated_return, 4),
+                    "assumptions": assumptions,
+                }
+            )
+
+        return rows

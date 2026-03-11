@@ -61,3 +61,15 @@ def test_portfolio_transactions_reject_unknown_symbol(client: TestClient) -> Non
         },
     )
     assert response.status_code == 400
+
+
+def test_portfolio_risk_snapshot(client: TestClient) -> None:
+    response = client.get("/api/v1/portfolio/risk")
+    assert response.status_code == 200
+
+    payload = response.json()
+    assert payload["portfolio"]["name"] == "Personal"
+    assert payload["gross_exposure"] >= 0
+    assert payload["concentration_hhi"] >= 0
+    assert isinstance(payload["factor_exposures"], list)
+    assert isinstance(payload["scenarios"], list)

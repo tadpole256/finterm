@@ -1,6 +1,9 @@
 import {
   mockAlertEvaluationSummary,
   mockAlertEvents,
+  mockBrokerAccounts,
+  mockBrokerReconciliation,
+  mockBrokerSyncSummary,
   mockDailyBriefDetail,
   defaultLayoutState,
   mockFilings,
@@ -13,7 +16,11 @@ import {
   mockNoteSynthesis,
   mockNotifications,
   mockPortfolioOverview,
+  mockPortfolioRiskSnapshot,
+  mockResearchQaResponse,
   mockResearchNotes,
+  mockSavedScreens,
+  mockScreenerResults,
   mockSecurityWorkspace,
   mockTheses,
   mockWatchlists
@@ -21,6 +28,9 @@ import {
 import type {
   AlertEvaluationSummary,
   AlertEvent,
+  BrokerAccount,
+  BrokerReconciliation,
+  BrokerSyncSummary,
   DashboardPayload,
   DailyBriefDetail,
   FilingRecord,
@@ -29,11 +39,16 @@ import type {
   MacroEventRecord,
   MacroSeriesRecord,
   MacroSyncSummary,
+  SavedScreen,
+  ScreenerFilters,
+  ScreenerResult,
   NoteSynthesis,
   NotificationItem,
   PortfolioOverviewPayload,
+  PortfolioRiskSnapshot,
   PortfolioTransaction,
   PortfolioTransactionSide,
+  ResearchQaResponse,
   ResearchNote,
   SecurityWorkspacePayload,
   Thesis,
@@ -281,6 +296,26 @@ export async function getNoteSynthesis(params: {
   }
 }
 
+export async function getResearchQa(params: {
+  question: string;
+  symbol?: string;
+  limit?: number;
+}): Promise<ResearchQaResponse> {
+  try {
+    const query = new URLSearchParams();
+    query.set("question", params.question);
+    if (params.symbol) {
+      query.set("symbol", params.symbol);
+    }
+    if (params.limit) {
+      query.set("limit", String(params.limit));
+    }
+    return await request<ResearchQaResponse>(`/api/v1/ai/research-qa?${query.toString()}`);
+  } catch {
+    return mockResearchQaResponse;
+  }
+}
+
 export async function getPortfolioOverview(
   portfolioId?: string
 ): Promise<PortfolioOverviewPayload> {
@@ -289,6 +324,17 @@ export async function getPortfolioOverview(
     return await request<PortfolioOverviewPayload>(`/api/v1/portfolio/overview${suffix}`);
   } catch {
     return mockPortfolioOverview;
+  }
+}
+
+export async function getPortfolioRisk(
+  portfolioId?: string
+): Promise<PortfolioRiskSnapshot> {
+  try {
+    const suffix = portfolioId ? `?portfolio_id=${encodeURIComponent(portfolioId)}` : "";
+    return await request<PortfolioRiskSnapshot>(`/api/v1/portfolio/risk${suffix}`);
+  } catch {
+    return mockPortfolioRiskSnapshot;
   }
 }
 
@@ -459,5 +505,99 @@ export async function getMacroEvents(daysAhead = 14): Promise<MacroEventRecord[]
     return await request<MacroEventRecord[]>(`/api/v1/macro/events?days_ahead=${daysAhead}`);
   } catch {
     return mockMacroEvents;
+  }
+}
+
+export async function runScreener(filters: ScreenerFilters = {}): Promise<ScreenerResult[]> {
+  try {
+    const query = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        query.set(key, String(value));
+      }
+    });
+    const suffix = query.size > 0 ? `?${query.toString()}` : "";
+    const response = await request<{ results: ScreenerResult[] }>(`/api/v1/screening/run${suffix}`);
+    return response.results;
+  } catch {
+    return mockScreenerResults;
+  }
+}
+
+export async function getSavedScreens(): Promise<SavedScreen[]> {
+  try {
+    return await request<SavedScreen[]>("/api/v1/screening/screens");
+  } catch {
+    return mockSavedScreens;
+  }
+}
+
+export async function createSavedScreen(payload: {
+  name: string;
+  criteria: ScreenerFilters;
+}): Promise<SavedScreen> {
+  return request<SavedScreen>("/api/v1/screening/screens", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function updateSavedScreen(
+  screenId: string,
+  payload: {
+    name?: string;
+    criteria?: ScreenerFilters;
+  }
+): Promise<SavedScreen> {
+  return request<SavedScreen>(`/api/v1/screening/screens/${screenId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function deleteSavedScreen(screenId: string): Promise<void> {
+  await request<void>(`/api/v1/screening/screens/${screenId}`, {
+    method: "DELETE"
+  });
+}
+
+export async function runSavedScreen(screenId: string): Promise<ScreenerResult[]> {
+  try {
+    const response = await request<{ results: ScreenerResult[] }>(
+      `/api/v1/screening/screens/${screenId}/run`,
+      {
+        method: "POST"
+      }
+    );
+    return response.results;
+  } catch {
+    return mockScreenerResults;
+  }
+}
+
+export async function getBrokerAccounts(): Promise<BrokerAccount[]> {
+  try {
+    return await request<BrokerAccount[]>("/api/v1/broker/accounts");
+  } catch {
+    return mockBrokerAccounts;
+  }
+}
+
+export async function syncBroker(): Promise<BrokerSyncSummary> {
+  try {
+    return await request<BrokerSyncSummary>("/api/v1/broker/sync", {
+      method: "POST"
+    });
+  } catch {
+    return mockBrokerSyncSummary;
+  }
+}
+
+export async function getBrokerReconciliation(portfolioId?: string): Promise<BrokerReconciliation> {
+  try {
+    const suffix = portfolioId ? `?portfolio_id=${encodeURIComponent(portfolioId)}` : "";
+    return await request<BrokerReconciliation>(`/api/v1/broker/reconcile${suffix}`);
+  } catch {
+    return mockBrokerReconciliation;
   }
 }

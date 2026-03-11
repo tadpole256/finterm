@@ -12,12 +12,14 @@ from app.schemas.research import (
     CreateThesisRequest,
     NoteSynthesisResponse,
     ResearchNoteView,
+    ResearchQaResponse,
     ThesisView,
     UpdateResearchNoteRequest,
     UpdateThesisRequest,
 )
 from app.services.ai_notes import synthesize_notes
 from app.services.research import ResearchService
+from app.services.research_qa import answer_research_question
 
 router = APIRouter(prefix="/research", tags=["research"])
 ai_router = APIRouter(prefix="/ai", tags=["ai"])
@@ -187,3 +189,23 @@ def get_note_synthesis_alias(
     db: Session = Depends(get_db),
 ) -> dict[str, object]:
     return get_note_synthesis(symbol=symbol, theme=theme, user_id=user_id, db=db)
+
+
+@ai_router.get("/research-qa", response_model=ResearchQaResponse)
+def get_research_qa(
+    question: str = Query(min_length=3, max_length=1200),
+    symbol: str | None = Query(default=None),
+    limit: int = Query(default=6, ge=1, le=10),
+    user_id: str = Depends(get_user_id),
+    db: Session = Depends(get_db),
+) -> dict[str, object]:
+    try:
+        return answer_research_question(
+            db=db,
+            user_id=user_id,
+            question=question,
+            symbol=symbol,
+            limit=limit,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc

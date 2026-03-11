@@ -3,15 +3,19 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { AlertsWorkspaceScreen } from "@/components/AlertsWorkspaceScreen";
+import { BrokerWorkspaceScreen } from "@/components/BrokerWorkspaceScreen";
 import { DashboardScreen } from "@/components/DashboardScreen";
 import { IntelSyncScreen } from "@/components/IntelSyncScreen";
 import { PortfolioScreen } from "@/components/PortfolioScreen";
 import { ResearchNotebookScreen } from "@/components/ResearchNotebookScreen";
+import { ScreenerScreen } from "@/components/ScreenerScreen";
 import { SecurityWorkspaceScreen } from "@/components/SecurityWorkspaceScreen";
 import { WatchlistsScreen } from "@/components/WatchlistsScreen";
 import {
   mockAlertEvaluationSummary,
   mockAlertEvents,
+  mockBrokerAccounts,
+  mockBrokerReconciliation,
   mockDailyBriefDetail,
   mockFilings,
   mockFilingSyncSummary,
@@ -25,8 +29,11 @@ import {
   mockNoteSynthesis,
   mockPortfolioOverview,
   mockResearchNotes,
+  mockSavedScreens,
+  mockScreenerResults,
   mockSecurityWorkspace,
-  mockTheses
+  mockTheses,
+  mockWatchlists
 } from "@/lib/mock";
 
 vi.mock("next/link", () => ({
@@ -138,5 +145,31 @@ describe("screen smoke coverage", () => {
 
     expect(screen.getByText("Filings & Macro Sync")).toBeInTheDocument();
     expect(screen.getByText("Recent Filings")).toBeInTheDocument();
+  });
+
+  it("renders screener shell", () => {
+    render(
+      <ScreenerScreen
+        initialResults={mockScreenerResults}
+        initialSavedScreens={mockSavedScreens}
+        watchlists={mockWatchlists}
+      />
+    );
+
+    expect(screen.getByText("Screener")).toBeInTheDocument();
+    expect(screen.getByText("Saved Screens")).toBeInTheDocument();
+    expect(screen.getByText("Results")).toBeInTheDocument();
+  });
+
+  it("renders broker workspace shell", () => {
+    render(
+      <BrokerWorkspaceScreen
+        initialAccounts={mockBrokerAccounts}
+        initialReconciliation={mockBrokerReconciliation}
+      />
+    );
+
+    expect(screen.getByText("Broker Reconciliation")).toBeInTheDocument();
+    expect(screen.getByText("Broker Accounts")).toBeInTheDocument();
   });
 });

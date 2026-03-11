@@ -70,3 +70,16 @@ def test_note_synthesis_routes(client: TestClient) -> None:
     ai_alias = client.get("/api/v1/ai/note-synthesis", params={"theme": "quality"})
     assert ai_alias.status_code == 200
     assert ai_alias.json()["scope_theme"] == "quality"
+
+
+def test_ai_research_qa_with_citations(client: TestClient) -> None:
+    response = client.get(
+        "/api/v1/ai/research-qa",
+        params={"question": "What are the main risks in AAPL?", "symbol": "AAPL"},
+    )
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["symbol"] == "AAPL"
+    assert payload["answer"]
+    assert payload["coverage_count"] >= 1
+    assert payload["citations"]

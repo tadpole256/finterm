@@ -67,9 +67,21 @@
 - [x] Intel sync UI workspace (`/intel`) for filings/macro visibility + manual sync
 - [x] Phase 6 backend/frontend test coverage
 
-## Next (Phase 7)
+## Phase 7 - Screener & Polish
 
-- [ ] Saved screens UI workflows for screener persistence
-- [ ] Richer screening filters and result table ergonomics
-- [ ] Keyboard shortcuts and interaction polish
-- [ ] Loading/empty/error state consistency pass across all major screens
+- [x] Saved screens UI workflows for screener persistence
+- [x] Richer screening filters and result table ergonomics
+- [x] Keyboard shortcuts and interaction polish
+- [x] Loading/empty/error state consistency pass across major screens
+
+## Phase 8 - Broker + Risk + Retrieval
+
+- [x] Broker integration adapters and reconciliation model (read-only first)
+- [x] Advanced portfolio risk snapshots (factor buckets, scenario stress stubs)
+- [x] AI retrieval augmentation over filings + notes with citation traces
+
+## Next (Phase 9+)
+
+- [ ] Execution-ready broker adapters (auth/session lifecycle) behind strict capability flags
+- [ ] Trade/order journal linkage to broker fills and reconciliation exceptions
+- [ ] Semantic search/ranking upgrades for retrieval QA (embedding-backed, provider-pluggable)

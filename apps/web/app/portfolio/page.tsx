@@ -1,7 +1,7 @@
 import { PortfolioScreen } from "@/components/PortfolioScreen";
-import { getPortfolioOverview } from "@/lib/api";
+import { getPortfolioOverview, getPortfolioRisk } from "@/lib/api";
 
 export default async function PortfolioPage() {
-  const overview = await getPortfolioOverview();
-  return <PortfolioScreen initialOverview={overview} />;
+  const [overview, risk] = await Promise.all([getPortfolioOverview(), getPortfolioRisk()]);
+  return <PortfolioScreen initialOverview={overview} initialRisk={risk} />;
 }

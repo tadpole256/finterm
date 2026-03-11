@@ -8,6 +8,7 @@ from app.db.session import get_db
 from app.schemas.portfolio import (
     CreateTransactionRequest,
     PortfolioOverviewResponse,
+    PortfolioRiskResponse,
     PortfolioTransactionView,
     PositionsResponse,
     TransactionsResponse,
@@ -53,6 +54,19 @@ def get_transactions(
 ) -> dict[str, object]:
     try:
         return PortfolioService(db, provider).transactions(user_id=user_id, portfolio_id=portfolio_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/risk", response_model=PortfolioRiskResponse)
+def get_risk_snapshot(
+    portfolio_id: str | None = Query(default=None),
+    user_id: str = Depends(get_user_id),
+    db: Session = Depends(get_db),
+    provider: MarketDataProvider = Depends(get_provider),
+) -> dict[str, object]:
+    try:
+        return PortfolioService(db, provider).risk_snapshot(user_id=user_id, portfolio_id=portfolio_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 

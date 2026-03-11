@@ -5,16 +5,20 @@ import { useState } from "react";
 import {
   createPortfolioTransaction,
   deletePortfolioTransaction,
-  getPortfolioOverview
+  getPortfolioOverview,
+  getPortfolioRisk
 } from "@/lib/api";
 import { formatCurrency, formatDateTime } from "@/lib/format";
+import { StateNotice } from "@/components/StateNotice";
 import type {
   PortfolioOverviewPayload,
+  PortfolioRiskSnapshot,
   PortfolioTransactionSide
 } from "@/lib/types";
 
 interface PortfolioScreenProps {
   initialOverview: PortfolioOverviewPayload;
+  initialRisk?: PortfolioRiskSnapshot | null;
 }
 
 interface TransactionDraft {
@@ -35,8 +39,9 @@ const defaultDraft: TransactionDraft = {
   notes: ""
 };
 
-export function PortfolioScreen({ initialOverview }: PortfolioScreenProps) {
+export function PortfolioScreen({ initialOverview, initialRisk = null }: PortfolioScreenProps) {
   const [overview, setOverview] = useState(initialOverview);
+  const [risk, setRisk] = useState<PortfolioRiskSnapshot | null>(initialRisk);
   const [draft, setDraft] = useState<TransactionDraft>(defaultDraft);
   const [isSaving, setIsSaving] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -45,8 +50,12 @@ export function PortfolioScreen({ initialOverview }: PortfolioScreenProps) {
   async function refreshOverview() {
     setIsRefreshing(true);
     try {
-      const next = await getPortfolioOverview(overview.portfolio.id);
-      setOverview(next);
+      const [nextOverview, nextRisk] = await Promise.all([
+        getPortfolioOverview(overview.portfolio.id),
+        getPortfolioRisk(overview.portfolio.id)
+      ]);
+      setOverview(nextOverview);
+      setRisk(nextRisk);
       setError(null);
     } catch {
       setError("Unable to refresh portfolio snapshot.");
@@ -231,6 +240,92 @@ export function PortfolioScreen({ initialOverview }: PortfolioScreenProps) {
               {overview.exposures.length === 0 ? (
                 <p className="text-sm text-textSecondary">No exposure data available.</p>
               ) : null}
+            </div>
+          </section>
+
+          <section className="panel">
+            <div className="panel-header">
+              <h3 className="text-sm font-semibold text-textPrimary">Risk Snapshot</h3>
+              <p className="text-xs text-textSecondary">Heuristic factor and scenario view</p>
+            </div>
+            <div className="panel-body space-y-3">
+              {risk === null ? (
+                <StateNotice title="Risk snapshot unavailable." />
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="rounded-md border border-border px-3 py-2">
+                      <p className="text-xs text-textSecondary">Net Exposure</p>
+                      <p className="text-sm text-textPrimary">{(risk.net_exposure * 100).toFixed(1)}%</p>
+                    </div>
+                    <div className="rounded-md border border-border px-3 py-2">
+                      <p className="text-xs text-textSecondary">Gross Exposure</p>
+                      <p className="text-sm text-textPrimary">{(risk.gross_exposure * 100).toFixed(1)}%</p>
+                    </div>
+                    <div className="rounded-md border border-border px-3 py-2 col-span-2">
+                      <p className="text-xs text-textSecondary">Concentration (HHI)</p>
+                      <p className="text-sm text-textPrimary">{risk.concentration_hhi.toFixed(4)}</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="mb-2 text-xs uppercase tracking-wider text-textSecondary">Top Positions</p>
+                    {risk.top_positions.length === 0 ? (
+                      <StateNotice title="No positions in risk scope." />
+                    ) : (
+                      <ul className="space-y-1">
+                        {risk.top_positions.map((position) => (
+                          <li key={position.symbol} className="flex items-center justify-between text-xs">
+                            <span className="text-textPrimary">{position.symbol}</span>
+                            <span className="text-textSecondary">
+                              {(position.weight * 100).toFixed(1)}% · {formatCurrency(position.market_value)}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  <div>
+                    <p className="mb-2 text-xs uppercase tracking-wider text-textSecondary">Factor Buckets</p>
+                    {risk.factor_exposures.length === 0 ? (
+                      <StateNotice title="No factor exposures available." />
+                    ) : (
+                      <ul className="space-y-1">
+                        {risk.factor_exposures.slice(0, 5).map((factor) => (
+                          <li key={factor.factor} className="flex items-center justify-between text-xs">
+                            <span className="text-textPrimary">{factor.factor}</span>
+                            <span className="text-textSecondary">{(factor.exposure * 100).toFixed(1)}%</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  <div>
+                    <p className="mb-2 text-xs uppercase tracking-wider text-textSecondary">Scenario Stubs</p>
+                    {risk.scenarios.length === 0 ? (
+                      <StateNotice title="No scenarios configured." />
+                    ) : (
+                      <ul className="space-y-2">
+                        {risk.scenarios.map((scenario) => (
+                          <li key={scenario.name} className="rounded-md border border-border px-3 py-2">
+                            <p className="text-xs text-textPrimary">{scenario.name}</p>
+                            <p className="text-xs text-textSecondary">{scenario.assumptions}</p>
+                            <p
+                              className={`text-xs ${
+                                scenario.estimated_pnl >= 0 ? "text-success" : "text-danger"
+                              }`}
+                            >
+                              {formatCurrency(scenario.estimated_pnl)} ({(scenario.estimated_return * 100).toFixed(1)}%)
+                            </p>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </section>
 

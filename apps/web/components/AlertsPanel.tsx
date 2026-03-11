@@ -1,4 +1,5 @@
 import { formatDateTime } from "@/lib/format";
+import { StateNotice } from "@/components/StateNotice";
 import type { AlertDigestItem } from "@/lib/types";
 
 interface AlertsPanelProps {
@@ -7,7 +8,7 @@ interface AlertsPanelProps {
 
 export function AlertsPanel({ alerts }: AlertsPanelProps) {
   if (alerts.length === 0) {
-    return <p className="text-sm text-textSecondary">No active alerts.</p>;
+    return <StateNotice title="No active alerts." detail="Create rules in Alerts to populate this panel." />;
   }
 
   return (
