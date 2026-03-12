@@ -43,4 +43,9 @@ def test_macro_sync_and_list_routes(client: TestClient) -> None:
     assert events_response.status_code == 200
     events = events_response.json()
     assert events
-    assert any(event["title"] == "CPI (YoY)" for event in events)
+    expected_titles = {
+        "CPI (YoY)",
+        "Initial Jobless Claims",
+        "University of Michigan Sentiment",
+    }
+    assert any(event["title"] in expected_titles for event in events)

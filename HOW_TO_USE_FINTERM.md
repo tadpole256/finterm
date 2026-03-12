@@ -7,7 +7,7 @@ This guide is written for non-technical users.
 Finterm is a personal market research terminal you run on your own computer.
 
 - It helps you track watchlists, charts, notes, alerts, screening, and portfolio context.
-- It currently uses seeded/mock market data for local use.
+- It can use free live market data (Alpha Vantage) or local mock data.
 - It is not a live brokerage execution platform.
 
 ## Before you start
@@ -57,25 +57,44 @@ cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env.local
 ```
 
-7. Prepare database tables and sample data:
+7. Get a free Alpha Vantage API key:
+
+- Open [Alpha Vantage API Key Page](https://www.alphavantage.co/support/#api-key)
+- Sign up and copy your key
+
+8. Put your key into both env files:
+
+Open `.env` and `apps/api/.env`, then set:
+
+```bash
+MARKET_DATA_PROVIDER=alpha_vantage
+ALPHA_VANTAGE_API_KEY=your_real_key_here
+ALPHA_VANTAGE_BASE_URL=https://www.alphavantage.co/query
+```
+
+9. Prepare database tables and sample data:
 
 ```bash
 npm run db:migrate
 npm run db:seed
 ```
 
-8. Start the app:
+10. Start the app:
 
 ```bash
 npm run dev
 ```
 
-9. Open your browser to:
+11. Open your browser to:
 
 - Web app: `http://localhost:3000`
 - API docs (optional): `http://localhost:8000/docs`
 
 Keep the Terminal window open while using the app.
+
+Notes:
+- Alpha Vantage free data is delayed (not true real-time).
+- If you refresh too often, Alpha Vantage can temporarily throttle requests.
 
 ## Daily start (after first setup)
 

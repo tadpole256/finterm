@@ -14,7 +14,11 @@ from app.services.retrieval_provider import RetrievalProvider, retrieval_provide
 @lru_cache(maxsize=1)
 def get_provider() -> MarketDataProvider:
     settings = get_settings()
-    return provider_from_name(settings.market_data_provider)
+    return provider_from_name(
+        settings.market_data_provider,
+        alpha_vantage_api_key=settings.alpha_vantage_api_key,
+        alpha_vantage_base_url=settings.alpha_vantage_base_url,
+    )
 
 
 @lru_cache(maxsize=1)

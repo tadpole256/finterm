@@ -134,7 +134,9 @@ Phase 9 additions:
 
 Provider adapters are selected through config and kept independent:
 
-- `MARKET_DATA_PROVIDER=mock|delayed|premium`
+- `MARKET_DATA_PROVIDER=alpha_vantage|mock|delayed|premium`
+- `ALPHA_VANTAGE_API_KEY` (required when `MARKET_DATA_PROVIDER=alpha_vantage`)
+- `ALPHA_VANTAGE_BASE_URL` (defaults to `https://www.alphavantage.co/query`)
 - `FILINGS_PROVIDER=mock_sec|...`
 - `MACRO_PROVIDER=mock_macro|...`
 - `BROKER_PROVIDER=mock_broker|...`

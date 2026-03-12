@@ -88,6 +88,10 @@
   - pluggable `RetrievalProvider` interface
   - deterministic `mock_embed` implementation
   - citation-level lexical/semantic/recency score details
+- Free-tier real market data adapter:
+  - `alpha_vantage` provider implementation for quotes, bars, search, movers, and instrument detail
+  - env-driven configuration (`ALPHA_VANTAGE_API_KEY`, `ALPHA_VANTAGE_BASE_URL`)
+  - explicit delayed/stale metadata for non-real-time free feeds
 - Data model additions:
   - `broker_order_events`
   - `reconciliation_exceptions`
@@ -104,9 +108,9 @@
 
 ## Data Provider Integration Strategy
 
-1. Mock providers (current baseline)
-2. Delayed/basic market data provider adapter
-3. Premium entitlement-aware market and filings adapters
+1. Mock providers (baseline retained for tests/offline mode)
+2. Free-tier live market adapter (`alpha_vantage`) for personal use
+3. Delayed/basic + premium entitlement-aware market and filings adapters
 4. Broker adapters with session/auth lifecycle and stricter symbol/account mapping
 5. Retrieval provider upgrades (vector index/managed embedding backend)
 

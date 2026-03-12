@@ -15,7 +15,8 @@ Need a non-technical setup guide? See [HOW_TO_USE_FINTERM.md](./HOW_TO_USE_FINTE
 
 - Foundation monorepo (`Next.js` frontend, `FastAPI` backend, worker scaffold).
 - Full baseline schema + Alembic migration for required core entities.
-- Mock provider abstraction with deterministic fixture-backed data.
+- Market data provider abstraction with both deterministic mock data and free-tier live data support
+  (Alpha Vantage).
 - Dashboard (`/`) with market snapshot, watchlists, movers, macro events, active alerts, morning brief.
 - Watchlists workspace (`/watchlists`) with create/add/remove/reorder and persisted layout state.
 - Security workspace (`/security/[symbol]`) with key stats, chart, overlays (SMA/EMA/RSI/MACD), filings/notes/catalyst context.
@@ -44,7 +45,7 @@ Need a non-technical setup guide? See [HOW_TO_USE_FINTERM.md](./HOW_TO_USE_FINTE
 - **Worker (`apps/worker`)**: background loop scaffold for scheduled jobs (alerts/brief generation hooks).
 - **Data**: PostgreSQL for durable domain state; Redis for cache/coordination with graceful fallback.
 - **Providers**:
-  - `MarketDataProvider` (`MARKET_DATA_PROVIDER=mock|delayed|premium`, mock-backed today)
+  - `MarketDataProvider` (`MARKET_DATA_PROVIDER=alpha_vantage|mock|delayed|premium`)
   - `BrokerProvider` (`BROKER_PROVIDER=mock_broker`) with trading flag gate (`BROKER_TRADING_ENABLED`)
   - `RetrievalProvider` (`RETRIEVAL_PROVIDER=mock_embed`) for citation ranking
 
@@ -91,6 +92,25 @@ cp apps/web/.env.example apps/web/.env.local
 Important Phase 9 config flags:
 - `BROKER_TRADING_ENABLED=false` keeps broker flows preview/simulated only.
 - `RETRIEVAL_PROVIDER=mock_embed` enables deterministic hybrid retrieval scoring for local QA.
+- `MARKET_DATA_PROVIDER=alpha_vantage` uses free-tier live market data.
+- `ALPHA_VANTAGE_API_KEY` must be set to your free API key.
+
+## Free Real Market Data Setup (Alpha Vantage)
+
+1. Create a free API key at [Alpha Vantage Support](https://www.alphavantage.co/support/#api-key).
+2. In `.env` and `apps/api/.env`, set:
+
+```bash
+MARKET_DATA_PROVIDER=alpha_vantage
+ALPHA_VANTAGE_API_KEY=your_real_key_here
+ALPHA_VANTAGE_BASE_URL=https://www.alphavantage.co/query
+```
+
+3. Restart the API (`npm run dev`).
+
+Notes:
+- Free-tier market data is delayed/end-of-day; UI will continue to mark staleness honestly.
+- Free tier has strict request limits; frequent refreshes may be throttled.
 
 5. Apply migration and seed:
 

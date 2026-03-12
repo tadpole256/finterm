@@ -15,6 +15,11 @@ class Settings(BaseSettings):
     )
     redis_url: str = Field(default="redis://localhost:6379/0", alias="REDIS_URL")
     market_data_provider: str = Field(default="mock", alias="MARKET_DATA_PROVIDER")
+    alpha_vantage_api_key: str = Field(default="", alias="ALPHA_VANTAGE_API_KEY")
+    alpha_vantage_base_url: str = Field(
+        default="https://www.alphavantage.co/query",
+        alias="ALPHA_VANTAGE_BASE_URL",
+    )
     filings_provider: str = Field(default="mock_sec", alias="FILINGS_PROVIDER")
     macro_provider: str = Field(default="mock_macro", alias="MACRO_PROVIDER")
     broker_provider: str = Field(default="mock_broker", alias="BROKER_PROVIDER")

@@ -14,6 +14,7 @@
 - [x] Redis cache with in-memory fallback
 - [x] Dashboard/watchlists/security frontend screens and charting
 - [x] Phase 2 route and smoke test coverage
+- [x] Free-tier live market provider (`alpha_vantage`) with env-based adapter configuration
 
 ## Phase 3 - Research & Notes
 
