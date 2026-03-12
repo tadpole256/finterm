@@ -2,6 +2,8 @@
 
 Finterm is a personal market intelligence terminal for one advanced user. It focuses on high-signal monitoring, research context, charting, and workflow speed without pretending to be an enterprise Bloomberg replacement.
 
+Need a non-technical setup guide? See [HOW_TO_USE_FINTERM.md](./HOW_TO_USE_FINTERM.md).
+
 ## Product Vision
 
 - Personal command center for market monitoring and research execution.
